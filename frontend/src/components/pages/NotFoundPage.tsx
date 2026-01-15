@@ -1,9 +1,11 @@
-import { Link } from 'react-router-dom';
+'use client';
+
+import Link from 'next/link';
 import { Home, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Layout } from '@/components/layout/Layout';
 
-const NotFound = () => {
+export default function NotFoundPage() {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-20">
@@ -14,7 +16,7 @@ const NotFound = () => {
             Sorry, the page you're looking for doesn't exist or has been moved.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/">
+            <Link href="/">
               <Button className="bg-primary hover:bg-primary/90 gap-2 w-full sm:w-auto">
                 <Home size={16} />
                 Go Home
@@ -33,6 +35,4 @@ const NotFound = () => {
       </div>
     </Layout>
   );
-};
-
-export default NotFound;
+}

@@ -1,4 +1,6 @@
-import { useParams, Link } from 'react-router-dom';
+'use client';
+
+import Link from 'next/link';
 import { ArrowLeft, Minus, Plus, ShoppingCart, Heart, Share2, Check, Truck } from 'lucide-react';
 import { useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
@@ -9,8 +11,11 @@ import { products } from '@/data/products';
 import { useCartStore } from '@/store/cartStore';
 import { toast } from 'sonner';
 
-export default function ProductDetail() {
-  const { id } = useParams<{ id: string }>();
+interface ProductDetailPageProps {
+  id: string;
+}
+
+export default function ProductDetailPage({ id }: ProductDetailPageProps) {
   const [quantity, setQuantity] = useState(1);
   const addItem = useCartStore((state) => state.addItem);
 
@@ -21,7 +26,7 @@ export default function ProductDetail() {
       <Layout>
         <div className="container mx-auto px-4 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">Product not found</h1>
-          <Link to="/products">
+          <Link href="/products">
             <Button>Back to Products</Button>
           </Link>
         </div>
@@ -49,11 +54,11 @@ export default function ProductDetail() {
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
-          <Link to="/" className="hover:text-foreground">Home</Link>
+          <Link href="/" className="hover:text-foreground">Home</Link>
           <span>/</span>
-          <Link to="/products" className="hover:text-foreground">Products</Link>
+          <Link href="/products" className="hover:text-foreground">Products</Link>
           <span>/</span>
-          <Link to={`/categories/${product.categorySlug}`} className="hover:text-foreground">
+          <Link href={`/categories/${product.categorySlug}`} className="hover:text-foreground">
             {product.category}
           </Link>
           <span>/</span>
@@ -92,7 +97,7 @@ export default function ProductDetail() {
           <div className="flex flex-col">
             <div className="mb-4">
               <Link
-                to={`/categories/${product.categorySlug}`}
+                href={`/categories/${product.categorySlug}`}
                 className="text-sm text-primary font-medium hover:underline"
               >
                 {product.category}

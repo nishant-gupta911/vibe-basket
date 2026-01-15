@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+'use client'
+
+import Link from 'next/link';
 import { ShoppingCart } from 'lucide-react';
 import { Product } from '@/types';
 import { RatingStars } from './RatingStars';
@@ -25,7 +27,7 @@ export function ProductCard({ product }: ProductCardProps) {
     : 0;
 
   return (
-    <Link to={`/products/${product.id}`} className="block">
+    <Link href={`/products/${product.id}`} className="block">
       <div className="product-card group h-full flex flex-col">
         <div className="relative overflow-hidden aspect-square bg-secondary/30">
           <img

@@ -1,5 +1,8 @@
+'use client';
+
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Check } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -8,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
 
-export default function Register() {
+export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -16,7 +19,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  const navigate = useNavigate();
+  const router = useRouter();
   const register = useAuthStore((state) => state.register);
 
   const passwordChecks = [
@@ -52,7 +55,7 @@ export default function Register() {
     
     if (success) {
       toast.success('Account created successfully!');
-      navigate('/');
+      router.push('/');
     } else {
       toast.error('Registration failed');
     }
@@ -170,7 +173,7 @@ export default function Register() {
 
             <p className="text-center text-sm text-muted-foreground mt-6">
               Already have an account?{' '}
-              <Link to="/login" className="text-primary hover:underline font-medium">
+              <Link href="/login" className="text-primary hover:underline font-medium">
                 Sign in
               </Link>
             </p>

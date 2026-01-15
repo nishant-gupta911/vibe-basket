@@ -1,5 +1,8 @@
+'use client';
+
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -8,13 +11,13 @@ import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
 
-export default function Login() {
+export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  const navigate = useNavigate();
+  const router = useRouter();
   const login = useAuthStore((state) => state.login);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,7 +37,7 @@ export default function Login() {
     
     if (success) {
       toast.success('Welcome back!');
-      navigate('/');
+      router.push('/');
     } else {
       toast.error('Invalid credentials');
     }
@@ -148,7 +151,7 @@ export default function Login() {
 
             <p className="text-center text-sm text-muted-foreground mt-6">
               Don't have an account?{' '}
-              <Link to="/register" className="text-primary hover:underline font-medium">
+              <Link href="/register" className="text-primary hover:underline font-medium">
                 Sign up
               </Link>
             </p>

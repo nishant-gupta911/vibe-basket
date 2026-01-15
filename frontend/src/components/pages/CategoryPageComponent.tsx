@@ -1,12 +1,15 @@
-import { useParams } from 'react-router-dom';
+'use client';
+
 import { Layout } from '@/components/layout/Layout';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { products } from '@/data/products';
 import { categories } from '@/data/categories';
 
-export default function CategoryPage() {
-  const { slug } = useParams<{ slug: string }>();
-  
+interface CategoryPageComponentProps {
+  slug: string;
+}
+
+export default function CategoryPageComponent({ slug }: CategoryPageComponentProps) {
   const category = categories.find((c) => c.slug === slug);
   const categoryProducts = products.filter((p) => p.categorySlug === slug);
 

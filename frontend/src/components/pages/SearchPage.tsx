@@ -1,11 +1,13 @@
-import { useSearchParams } from 'react-router-dom';
+'use client';
+
+import { useSearchParams } from 'next/navigation';
 import { Layout } from '@/components/layout/Layout';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { products } from '@/data/products';
 import { Search as SearchIcon } from 'lucide-react';
 
-export default function Search() {
-  const [searchParams] = useSearchParams();
+export default function SearchPage() {
+  const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
 
   const searchResults = products.filter((product) => {

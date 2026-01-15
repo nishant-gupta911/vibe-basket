@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+'use client'
+
+import Link from 'next/link';
 import { Category } from '@/types';
 
 interface CategoryCardProps {
@@ -8,7 +10,7 @@ interface CategoryCardProps {
 export function CategoryCard({ category }: CategoryCardProps) {
   return (
     <Link
-      to={`/categories/${category.slug}`}
+      href={`/categories/${category.slug}`}
       className="group relative overflow-hidden rounded-xl aspect-[4/3] block"
     >
       <img

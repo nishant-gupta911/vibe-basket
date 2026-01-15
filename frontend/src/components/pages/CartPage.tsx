@@ -1,11 +1,13 @@
-import { Link } from 'react-router-dom';
+'use client';
+
+import Link from 'next/link';
 import { Trash2, Minus, Plus, ShoppingBag, ArrowRight } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/store/cartStore';
 import { toast } from 'sonner';
 
-export default function Cart() {
+export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCartStore();
 
   const subtotal = getTotal();
@@ -33,7 +35,7 @@ export default function Cart() {
             <p className="text-muted-foreground mb-6">
               Looks like you haven't added anything to your cart yet.
             </p>
-            <Link to="/products">
+            <Link href="/products">
               <Button className="bg-primary hover:bg-primary/90 gap-2">
                 Start Shopping
                 <ArrowRight size={16} />
@@ -58,7 +60,7 @@ export default function Cart() {
                 key={product.id}
                 className="flex gap-4 p-4 bg-card rounded-xl border border-border"
               >
-                <Link to={`/products/${product.id}`} className="shrink-0">
+                <Link href={`/products/${product.id}`} className="shrink-0">
                   <img
                     src={product.image}
                     alt={product.name}
@@ -68,7 +70,7 @@ export default function Cart() {
 
                 <div className="flex-1 min-w-0">
                   <Link
-                    to={`/products/${product.id}`}
+                    href={`/products/${product.id}`}
                     className="font-semibold text-foreground hover:text-primary line-clamp-1"
                   >
                     {product.name}
@@ -124,7 +126,7 @@ export default function Cart() {
               <Button variant="outline" onClick={clearCart}>
                 Clear Cart
               </Button>
-              <Link to="/products">
+              <Link href="/products">
                 <Button variant="ghost" className="gap-1">
                   Continue Shopping
                   <ArrowRight size={16} />

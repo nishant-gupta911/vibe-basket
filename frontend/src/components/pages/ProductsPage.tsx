@@ -1,5 +1,7 @@
+'use client';
+
 import { useState, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'next/navigation';
 import { Filter, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { ProductGrid } from '@/components/products/ProductGrid';
@@ -25,8 +27,8 @@ import { Label } from '@/components/ui/label';
 
 type SortOption = 'featured' | 'price-asc' | 'price-desc' | 'rating' | 'newest';
 
-export default function Products() {
-  const [searchParams] = useSearchParams();
+export default function ProductsPage() {
+  const searchParams = useSearchParams();
   const [sortBy, setSortBy] = useState<SortOption>('featured');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);

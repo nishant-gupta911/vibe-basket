@@ -1,16 +1,18 @@
-import { Link } from 'react-router-dom';
-import { ArrowRight, Truck, Shield, RefreshCw, Headphones } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Layout } from '@/components/layout/Layout';
-import { ProductGrid } from '@/components/products/ProductGrid';
-import { CategoryCard } from '@/components/products/CategoryCard';
-import { products } from '@/data/products';
-import { categories } from '@/data/categories';
+'use client'
 
-const Index = () => {
-  const featuredProducts = products.filter((p) => p.badge === 'bestseller').slice(0, 4);
-  const trendingProducts = products.filter((p) => p.badge === 'new' || p.badge === 'sale').slice(0, 8);
-  const saleProducts = products.filter((p) => p.badge === 'sale');
+import Link from 'next/link'
+import { ArrowRight, Truck, Shield, RefreshCw, Headphones } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Layout } from '@/components/layout/Layout'
+import { ProductGrid } from '@/components/products/ProductGrid'
+import { CategoryCard } from '@/components/products/CategoryCard'
+import { products } from '@/data/products'
+import { categories } from '@/data/categories'
+
+export default function HomePage() {
+  const featuredProducts = products.filter((p) => p.badge === 'bestseller').slice(0, 4)
+  const trendingProducts = products.filter((p) => p.badge === 'new' || p.badge === 'sale').slice(0, 8)
+  const saleProducts = products.filter((p) => p.badge === 'sale')
 
   return (
     <Layout>
@@ -31,13 +33,13 @@ const Index = () => {
               Quality guaranteed.
             </p>
             <div className="flex flex-wrap gap-4">
-              <Link to="/products">
+              <Link href="/products">
                 <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 h-12 px-8">
                   Shop Now
                   <ArrowRight size={18} />
                 </Button>
               </Link>
-              <Link to="/categories/electronics">
+              <Link href="/categories/electronics">
                 <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 h-12 px-8">
                   Explore Categories
                 </Button>
@@ -79,7 +81,7 @@ const Index = () => {
               <h2 className="text-2xl lg:text-3xl font-bold text-foreground">Shop by Category</h2>
               <p className="text-muted-foreground mt-1">Find exactly what you're looking for</p>
             </div>
-            <Link to="/products" className="hidden sm:flex items-center gap-1 text-primary font-medium hover:underline">
+            <Link href="/products" className="hidden sm:flex items-center gap-1 text-primary font-medium hover:underline">
               View All
               <ArrowRight size={16} />
             </Link>
@@ -102,7 +104,7 @@ const Index = () => {
               <h2 className="text-2xl lg:text-3xl font-bold text-foreground">Featured Products</h2>
               <p className="text-muted-foreground mt-1">Our most popular items this month</p>
             </div>
-            <Link to="/products" className="hidden sm:flex items-center gap-1 text-primary font-medium hover:underline">
+            <Link href="/products" className="hidden sm:flex items-center gap-1 text-primary font-medium hover:underline">
               View All
               <ArrowRight size={16} />
             </Link>
@@ -127,7 +129,7 @@ const Index = () => {
                 <p className="text-white/90 mb-6">
                   Don't miss out on our biggest sale of the season. Shop now and save big on premium products.
                 </p>
-                <Link to="/products">
+                <Link href="/products">
                   <Button size="lg" className="bg-white text-destructive hover:bg-white/90 gap-2">
                     Shop Sale
                     <ArrowRight size={18} />
@@ -147,7 +149,7 @@ const Index = () => {
               <h2 className="text-2xl lg:text-3xl font-bold text-foreground">Trending Now</h2>
               <p className="text-muted-foreground mt-1">What's hot this week</p>
             </div>
-            <Link to="/products" className="hidden sm:flex items-center gap-1 text-primary font-medium hover:underline">
+            <Link href="/products" className="hidden sm:flex items-center gap-1 text-primary font-medium hover:underline">
               View All
               <ArrowRight size={16} />
             </Link>
@@ -180,7 +182,5 @@ const Index = () => {
         </div>
       </section>
     </Layout>
-  );
-};
-
-export default Index;
+  )
+}

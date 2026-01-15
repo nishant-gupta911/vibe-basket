@@ -1,12 +1,15 @@
-import { Link, useNavigate } from 'react-router-dom';
+'use client';
+
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { User, Package, Heart, MapPin, CreditCard, LogOut, Settings } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
 
-export default function Profile() {
-  const navigate = useNavigate();
+export default function ProfilePage() {
+  const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
 
   if (!isAuthenticated || !user) {
@@ -14,7 +17,7 @@ export default function Profile() {
       <Layout>
         <div className="container mx-auto px-4 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">Please sign in to view your profile</h1>
-          <Link to="/login">
+          <Link href="/login">
             <Button className="bg-primary hover:bg-primary/90">Sign In</Button>
           </Link>
         </div>
@@ -25,7 +28,7 @@ export default function Profile() {
   const handleLogout = () => {
     logout();
     toast.success('Logged out successfully');
-    navigate('/');
+    router.push('/');
   };
 
   const menuItems = [
@@ -111,7 +114,7 @@ export default function Profile() {
             <div className="p-6 text-center text-muted-foreground">
               <Package size={40} className="mx-auto mb-3 opacity-50" />
               <p>No orders yet</p>
-              <Link to="/products">
+              <Link href="/products">
                 <Button variant="link" className="text-primary mt-2">
                   Start shopping
                 </Button>

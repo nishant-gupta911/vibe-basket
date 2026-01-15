@@ -1,5 +1,8 @@
+'use client'
+
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Search, ShoppingCart, User, Menu, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +19,7 @@ import {
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const navigate = useNavigate();
+  const router = useRouter();
   
   const itemCount = useCartStore((state) => state.getItemCount());
   const { isAuthenticated, user, logout } = useAuthStore();
@@ -24,7 +27,7 @@ export function Navbar() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery('');
     }
   };
@@ -34,11 +37,11 @@ export function Navbar() {
       <div className="container mx-auto">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 shrink-0">
+          <Link href="/" className="flex items-center gap-2 shrink-0">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">S</span>
+              <span className="text-primary-foreground font-bold text-lg">V</span>
             </div>
-            <span className="text-xl font-bold text-foreground hidden sm:block">ShopHub</span>
+            <span className="text-xl font-bold text-foreground hidden sm:block">Vibe Basket</span>
           </Link>
 
           {/* Search Bar - Desktop */}
@@ -74,7 +77,7 @@ export function Navbar() {
               <DropdownMenuContent align="end" className="w-48 bg-popover">
                 {categories.map((category) => (
                   <DropdownMenuItem key={category.id} asChild>
-                    <Link to={`/categories/${category.slug}`} className="cursor-pointer">
+                    <Link href={`/categories/${category.slug}`} className="cursor-pointer">
                       {category.name}
                     </Link>
                   </DropdownMenuItem>
@@ -82,11 +85,11 @@ export function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Link to="/products">
+            <Link href="/products">
               <Button variant="ghost">All Products</Button>
             </Link>
 
-            <Link to="/cart" className="relative">
+            <Link href="/cart" className="relative">
               <Button variant="ghost" size="icon">
                 <ShoppingCart size={20} />
                 {itemCount > 0 && (
@@ -107,7 +110,7 @@ export function Navbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-popover">
                   <DropdownMenuItem asChild>
-                    <Link to="/profile" className="cursor-pointer">Profile</Link>
+                    <Link href="/profile" className="cursor-pointer">Profile</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={logout} className="cursor-pointer">
                     Logout
@@ -115,7 +118,7 @@ export function Navbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link to="/login">
+              <Link href="/login">
                 <Button variant="default" className="bg-primary hover:bg-primary/90">
                   Sign In
                 </Button>
@@ -125,7 +128,7 @@ export function Navbar() {
 
           {/* Mobile Menu Button */}
           <div className="flex items-center gap-2 md:hidden">
-            <Link to="/cart" className="relative">
+            <Link href="/cart" className="relative">
               <Button variant="ghost" size="icon">
                 <ShoppingCart size={20} />
                 {itemCount > 0 && (
@@ -173,7 +176,7 @@ export function Navbar() {
           <div className="md:hidden border-t border-border py-4 animate-fade-in">
             <nav className="flex flex-col gap-2">
               <Link
-                to="/products"
+                href="/products"
                 className="px-4 py-2 hover:bg-secondary rounded-lg"
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -182,7 +185,7 @@ export function Navbar() {
               {categories.map((category) => (
                 <Link
                   key={category.id}
-                  to={`/categories/${category.slug}`}
+                  href={`/categories/${category.slug}`}
                   className="px-4 py-2 hover:bg-secondary rounded-lg"
                   onClick={() => setIsMenuOpen(false)}
                 >
@@ -193,7 +196,7 @@ export function Navbar() {
               {isAuthenticated ? (
                 <>
                   <Link
-                    to="/profile"
+                    href="/profile"
                     className="px-4 py-2 hover:bg-secondary rounded-lg"
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -212,14 +215,14 @@ export function Navbar() {
               ) : (
                 <>
                   <Link
-                    to="/login"
+                    href="/login"
                     className="px-4 py-2 hover:bg-secondary rounded-lg"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Sign In
                   </Link>
                   <Link
-                    to="/register"
+                    href="/register"
                     className="px-4 py-2 hover:bg-secondary rounded-lg"
                     onClick={() => setIsMenuOpen(false)}
                   >

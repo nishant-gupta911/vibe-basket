@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+'use client'
+
+import Link from 'next/link';
 import { Facebook, Twitter, Instagram, Youtube, Mail, MapPin, Phone } from 'lucide-react';
 
 export function Footer() {
@@ -8,7 +10,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand */}
           <div>
-            <Link to="/" className="flex items-center gap-2 mb-4">
+            <Link href="/" className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-lg">S</span>
               </div>
@@ -38,27 +40,27 @@ export function Footer() {
             <h3 className="font-semibold text-lg mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/products" className="text-background/70 hover:text-primary transition-colors">
+                <Link href="/products" className="text-background/70 hover:text-primary transition-colors">
                   All Products
                 </Link>
               </li>
               <li>
-                <Link to="/categories/electronics" className="text-background/70 hover:text-primary transition-colors">
+                <Link href="/categories/electronics" className="text-background/70 hover:text-primary transition-colors">
                   Electronics
                 </Link>
               </li>
               <li>
-                <Link to="/categories/fashion" className="text-background/70 hover:text-primary transition-colors">
+                <Link href="/categories/fashion" className="text-background/70 hover:text-primary transition-colors">
                   Fashion
                 </Link>
               </li>
               <li>
-                <Link to="/categories/home-kitchen" className="text-background/70 hover:text-primary transition-colors">
+                <Link href="/categories/home-kitchen" className="text-background/70 hover:text-primary transition-colors">
                   Home & Kitchen
                 </Link>
               </li>
               <li>
-                <Link to="/cart" className="text-background/70 hover:text-primary transition-colors">
+                <Link href="/cart" className="text-background/70 hover:text-primary transition-colors">
                   Cart
                 </Link>
               </li>
