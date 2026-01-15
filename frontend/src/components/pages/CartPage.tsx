@@ -1,29 +1,90 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Trash2, Minus, Plus, ShoppingBag, ArrowRight } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { useCartStore } from '@/store/cartStore';
+import { useCart } from '@/features/cart/useCart';
+import { useAuth } from '@/features/auth/useAuth';
+import { orderService } from '@/features/orders/orderService';
 import { toast } from 'sonner';
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, getTotal, clearCart } = useCartStore();
+  const router = useRouter();
+  const { cart, isLoading, fetchCart, updateCartItem, removeCartItem, getCartTotal } = useCart();
+  const { isAuthenticated } = useAuth();
 
-  const subtotal = getTotal();
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchCart();
+    }
+  }, [isAuthenticated]);
+
+  const subtotal = getCartTotal();
   const shipping = subtotal > 50 ? 0 : 9.99;
   const total = subtotal + shipping;
 
-  const handleRemoveItem = (productId: string, productName: string) => {
-    removeItem(productId);
-    toast.success(`${productName} removed from cart`);
+  const handleRemoveItem = async (itemId: number, productName: string) => {
+    try {
+      await removeCartItem(itemId);
+      toast.success(`${productName} removed from cart`);
+    } catch (error: any) {
+      toast.error('Failed to remove item');
+    }
   };
 
-  const handleCheckout = () => {
-    toast.success('Checkout functionality coming soon!');
+  const handleUpdateQuantity = async (itemId: number, newQuantity: number) => {
+    if (newQuantity < 1) return;
+    try {
+      await updateCartItem(itemId, newQuantity);
+    } catch (error: any) {
+      toast.error('Failed to update quantity');
+    }
   };
 
-  if (items.length === 0) {
+  const handleCheckout = async () => {
+    try {
+      const response = await orderService.createOrder();
+      toast.success('Order placed successfully!');
+      router.push('/profile');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create order');
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-16">
+          <div className="max-w-md mx-auto text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-4">Please Login</h1>
+            <p className="text-muted-foreground mb-6">
+              You need to be logged in to view your cart.
+            </p>
+            <Link href="/login">
+              <Button className="bg-primary hover:bg-primary/90">Login</Button>
+            </Link>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center">
+            <p className="text-muted-foreground">Loading cart...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!cart || cart.items.length === 0) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-16">
@@ -55,27 +116,27 @@ export default function CartPage() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
-            {items.map(({ product, quantity }) => (
+            {cart.items.map((item) => (
               <div
-                key={product.id}
+                key={item.id}
                 className="flex gap-4 p-4 bg-card rounded-xl border border-border"
               >
-                <Link href={`/products/${product.id}`} className="shrink-0">
+                <Link href={`/products/${item.product.id}`} className="shrink-0">
                   <img
-                    src={product.image}
-                    alt={product.name}
+                    src={item.product.image}
+                    alt={item.product.name}
                     className="w-24 h-24 object-cover rounded-lg"
                   />
                 </Link>
 
                 <div className="flex-1 min-w-0">
                   <Link
-                    href={`/products/${product.id}`}
+                    href={`/products/${item.product.id}`}
                     className="font-semibold text-foreground hover:text-primary line-clamp-1"
                   >
-                    {product.name}
+                    {item.product.name}
                   </Link>
-                  <p className="text-sm text-muted-foreground mb-2">{product.category}</p>
+                  <p className="text-sm text-muted-foreground mb-2">Stock: {item.product.stock}</p>
                   
                   <div className="flex items-center gap-4">
                     <div className="flex items-center border border-border rounded-lg">
@@ -83,16 +144,16 @@ export default function CartPage() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 rounded-none"
-                        onClick={() => updateQuantity(product.id, quantity - 1)}
+                        onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                       >
                         <Minus size={14} />
                       </Button>
-                      <span className="w-8 text-center text-sm font-medium">{quantity}</span>
+                      <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 rounded-none"
-                        onClick={() => updateQuantity(product.id, quantity + 1)}
+                        onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                       >
                         <Plus size={14} />
                       </Button>
@@ -102,7 +163,7 @@ export default function CartPage() {
                       variant="ghost"
                       size="sm"
                       className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleRemoveItem(product.id, product.name)}
+                      onClick={() => handleRemoveItem(item.id, item.product.name)}
                     >
                       <Trash2 size={16} />
                     </Button>
@@ -111,28 +172,16 @@ export default function CartPage() {
 
                 <div className="text-right">
                   <p className="font-bold text-foreground">
-                    ${(product.price * quantity).toFixed(2)}
+                    ${(item.product.price * item.quantity).toFixed(2)}
                   </p>
-                  {quantity > 1 && (
+                  {item.quantity > 1 && (
                     <p className="text-sm text-muted-foreground">
-                      ${product.price.toFixed(2)} each
+                      ${item.product.price.toFixed(2)} each
                     </p>
                   )}
                 </div>
               </div>
             ))}
-
-            <div className="flex justify-between items-center pt-4">
-              <Button variant="outline" onClick={clearCart}>
-                Clear Cart
-              </Button>
-              <Link href="/products">
-                <Button variant="ghost" className="gap-1">
-                  Continue Shopping
-                  <ArrowRight size={16} />
-                </Button>
-              </Link>
-            </div>
           </div>
 
           {/* Order Summary */}

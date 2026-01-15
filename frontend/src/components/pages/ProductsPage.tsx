@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Filter, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { Button } from '@/components/ui/button';
-import { products } from '@/data/products';
+import { productService, Product } from '@/features/products/productService';
 import { categories } from '@/data/categories';
 import {
   Select,
@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/sheet';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 
 type SortOption = 'featured' | 'price-asc' | 'price-desc' | 'rating' | 'newest';
 
@@ -32,54 +33,50 @@ export default function ProductsPage() {
   const [sortBy, setSortBy] = useState<SortOption>('featured');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   
-  const searchQuery = searchParams.get('q') || '';
+  const searchQuery = searchParams.get('search') || '';
+  const categoryParam = searchParams.get('category') || '';
 
-  const filteredProducts = useMemo(() => {
-    let result = [...products];
+  useEffect(() => {
+    fetchProducts();
+  }, [searchQuery, selectedCategories, priceRange, page, categoryParam]);
 
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.name.toLowerCase().includes(query) ||
-          p.description.toLowerCase().includes(query) ||
-          p.category.toLowerCase().includes(query)
-      );
+  const fetchProducts = async () => {
+    try {
+      setIsLoading(true);
+      const response = await productService.getProducts({
+        page,
+        limit: 12,
+        search: searchQuery,
+        category: categoryParam || (selectedCategories.length > 0 ? selectedCategories[0] : undefined),
+        minPrice: priceRange[0],
+        maxPrice: priceRange[1],
+      });
+      
+      setProducts(response.data.products);
+      setTotalPages(response.data.totalPages);
+    } catch (error: any) {
+      toast.error('Failed to fetch products');
+      console.error(error);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    // Category filter
-    if (selectedCategories.length > 0) {
-      result = result.filter((p) => selectedCategories.includes(p.categorySlug));
-    }
-
-    // Price filter
-    result = result.filter(
-      (p) => p.price >= priceRange[0] && p.price <= priceRange[1]
-    );
-
-    // Sorting
+  const sortedProducts = [...products].sort((a, b) => {
     switch (sortBy) {
       case 'price-asc':
-        result.sort((a, b) => a.price - b.price);
-        break;
+        return a.price - b.price;
       case 'price-desc':
-        result.sort((a, b) => b.price - a.price);
-        break;
-      case 'rating':
-        result.sort((a, b) => b.rating - a.rating);
-        break;
-      case 'newest':
-        result.sort((a, b) => (b.badge === 'new' ? 1 : 0) - (a.badge === 'new' ? 1 : 0));
-        break;
+        return b.price - a.price;
       default:
-        // Featured - bestsellers first
-        result.sort((a, b) => (b.badge === 'bestseller' ? 1 : 0) - (a.badge === 'bestseller' ? 1 : 0));
+        return 0;
     }
-
-    return result;
-  }, [searchQuery, selectedCategories, priceRange, sortBy]);
+  });
 
   const toggleCategory = (slug: string) => {
     setSelectedCategories((prev) =>
@@ -149,7 +146,7 @@ export default function ProductsPage() {
             {searchQuery ? `Search results for "${searchQuery}"` : 'All Products'}
           </h1>
           <p className="text-muted-foreground">
-            {filteredProducts.length} products found
+            {sortedProducts.length} products found
           </p>
         </div>
 
@@ -208,8 +205,12 @@ export default function ProductsPage() {
             </div>
 
             {/* Products Grid */}
-            {filteredProducts.length > 0 ? (
-              <ProductGrid products={filteredProducts} columns={3} />
+            {isLoading ? (
+              <div className="text-center py-16">
+                <p className="text-muted-foreground text-lg">Loading products...</p>
+              </div>
+            ) : sortedProducts.length > 0 ? (
+              <ProductGrid products={sortedProducts} columns={3} />
             ) : (
               <div className="text-center py-16">
                 <p className="text-muted-foreground text-lg mb-4">
@@ -220,9 +221,10 @@ export default function ProductsPage() {
                   onClick={() => {
                     setSelectedCategories([]);
                     setPriceRange([0, 1000]);
+                    setPage(1);
                   }}
                 >
-                  Clear all filters
+                  Clear Filters
                 </Button>
               </div>
             )}

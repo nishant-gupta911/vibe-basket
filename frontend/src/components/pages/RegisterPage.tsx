@@ -8,7 +8,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuthStore } from '@/store/authStore';
+import { useAuth } from '@/features/auth/useAuth';
 import { toast } from 'sonner';
 
 export default function RegisterPage() {
@@ -17,10 +17,9 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   
   const router = useRouter();
-  const register = useAuthStore((state) => state.register);
+  const { register, isLoading } = useAuth();
 
   const passwordChecks = [
     { label: 'At least 8 characters', valid: password.length >= 8 },
@@ -46,21 +45,12 @@ export default function RegisterPage() {
       return;
     }
 
-    setIsLoading(true);
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    const success = register(name, email, password);
-    
-    if (success) {
+    try {
+      await register({ name, email, password });
       toast.success('Account created successfully!');
-      router.push('/');
-    } else {
-      toast.error('Registration failed');
+    } catch (error: any) {
+      toast.error(error.message || 'Registration failed');
     }
-    
-    setIsLoading(false);
   };
 
   return (

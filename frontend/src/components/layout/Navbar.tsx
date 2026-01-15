@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Search, ShoppingCart, User, Menu, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useCartStore } from '@/store/cartStore';
-import { useAuthStore } from '@/store/authStore';
+import { useCart } from '@/features/cart/useCart';
+import { useAuth } from '@/features/auth/useAuth';
 import { categories } from '@/data/categories';
 import {
   DropdownMenu,
@@ -21,13 +21,22 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
   
-  const itemCount = useCartStore((state) => state.getItemCount());
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { getCartItemCount, fetchCart } = useCart();
+  const { isAuthenticated, user, logout, checkAuth } = useAuth();
+  
+  const itemCount = getCartItemCount();
+
+  useEffect(() => {
+    checkAuth();
+    if (isAuthenticated) {
+      fetchCart();
+    }
+  }, [isAuthenticated]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery('');
     }
   };

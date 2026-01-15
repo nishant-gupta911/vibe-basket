@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { ShoppingCart } from 'lucide-react';
-import { Product } from '@/types';
 import { RatingStars } from './RatingStars';
 import { Button } from '@/components/ui/button';
-import { useCartStore } from '@/store/cartStore';
+import { useCart } from '@/features/cart/useCart';
+import { Product } from '@/features/products/productService';
 import { toast } from 'sonner';
 
 interface ProductCardProps {
@@ -13,18 +13,18 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const addItem = useCartStore((state) => state.addItem);
+  const { addToCart } = useCart();
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addItem(product);
-    toast.success(`${product.name} added to cart`);
+    try {
+      await addToCart(product.id, 1);
+      toast.success(`${product.name} added to cart`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to add to cart');
+    }
   };
-
-  const discountPercent = product.originalPrice
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-    : 0;
 
   return (
     <Link href={`/products/${product.id}`} className="block">
@@ -32,24 +32,10 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="relative overflow-hidden aspect-square bg-secondary/30">
           <img
             src={product.image}
+            src={product.image}
             alt={product.name}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
-          {product.badge && (
-            <div className="absolute top-3 left-3">
-              {product.badge === 'sale' && (
-                <span className="badge-sale">-{discountPercent}%</span>
-              )}
-              {product.badge === 'new' && (
-                <span className="badge-new">New</span>
-              )}
-              {product.badge === 'bestseller' && (
-                <span className="bg-primary text-primary-foreground text-xs font-semibold px-2 py-1 rounded-full">
-                  Bestseller
-                </span>
-              )}
-            </div>
-          )}
           <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/5 transition-colors duration-300" />
         </div>
         
@@ -61,18 +47,11 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.name}
           </h3>
           
-          <RatingStars rating={product.rating} reviewCount={product.reviewCount} size="sm" />
-          
           <div className="mt-auto pt-3 flex items-end justify-between">
             <div className="flex flex-col">
               <span className="text-lg font-bold text-foreground">
                 ${product.price.toFixed(2)}
               </span>
-              {product.originalPrice && (
-                <span className="text-sm text-muted-foreground line-through">
-                  ${product.originalPrice.toFixed(2)}
-                </span>
-              )}
             </div>
             
             <Button
