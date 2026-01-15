@@ -98,6 +98,14 @@ export function Navbar() {
               <Button variant="ghost">All Products</Button>
             </Link>
 
+            <Link href="/chatbot">
+              <Button variant="ghost">AI Assistant</Button>
+            </Link>
+
+            <Link href="/mood">
+              <Button variant="ghost">Mood Finder</Button>
+            </Link>
+
             <Link href="/cart" className="relative">
               <Button variant="ghost" size="icon">
                 <ShoppingCart size={20} />
@@ -190,6 +198,20 @@ export function Navbar() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 All Products
+              </Link>
+              <Link
+                href="/chatbot"
+                className="px-4 py-2 hover:bg-secondary rounded-lg"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                AI Assistant
+              </Link>
+              <Link
+                href="/mood"
+                className="px-4 py-2 hover:bg-secondary rounded-lg"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Mood Finder
               </Link>
               {categories.map((category) => (
                 <Link

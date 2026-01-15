@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
 }
 
 model User {
@@ -19,15 +21,16 @@ model User {
 }
 
 model Product {
-  id          String   @id @default(uuid())
+  id          String                     @id @default(uuid())
   title       String
   description String?
   category    String
   price       Float
   image       String?
-  inStock     Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  inStock     Boolean                    @default(true)
+  embedding   Unsupported("vector(1536)")?
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime                   @updatedAt
 }
 
 model Cart {
