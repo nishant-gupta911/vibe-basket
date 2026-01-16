@@ -77,8 +77,14 @@ Be conversational, helpful, and concise. If no products match, suggest alternati
         reply: cleanReply,
         productIds: productIds.length > 0 ? productIds : null,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Chatbot error:', error);
+      if (error.status === 401) {
+        throw new Error('OpenAI API key is invalid');
+      }
+      if (error.status === 429) {
+        throw new Error('OpenAI API quota exceeded. Please check your billing.');
+      }
       throw new Error('Failed to process chat message');
     }
   }

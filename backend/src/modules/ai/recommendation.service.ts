@@ -150,8 +150,14 @@ Only recommend products from the list above. Consider the occasion, mood, and bu
       return {
         suggestions: validRecommendations.slice(0, 5),
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Mood recommendation error:', error);
+      if (error.status === 401) {
+        throw new Error('OpenAI API key is invalid');
+      }
+      if (error.status === 429) {
+        throw new Error('OpenAI API quota exceeded. Please check your billing.');
+      }
       throw new Error('Failed to generate recommendations');
     }
   }

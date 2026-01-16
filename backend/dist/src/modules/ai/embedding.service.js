@@ -19,6 +19,12 @@ exports.embeddingService = {
         }
         catch (error) {
             console.error('Error generating embedding:', error);
+            if (error.status === 401) {
+                throw new Error('OpenAI API key is invalid');
+            }
+            if (error.status === 429) {
+                throw new Error('OpenAI API quota exceeded. Please add credits to your account.');
+            }
             throw new Error('Failed to generate embedding');
         }
     },
