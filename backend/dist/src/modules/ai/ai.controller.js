@@ -27,31 +27,59 @@ let AIController = class AIController {
     }
     async chat(body) {
         if (!body.message) {
-            throw new common_1.HttpException('Message is required', common_1.HttpStatus.BAD_REQUEST);
+            return {
+                success: false,
+                data: null,
+                message: 'Message is required'
+            };
         }
         try {
             const response = await this.chatbotService.chat(body.message, body.history);
-            return response;
+            return {
+                success: true,
+                data: response,
+                message: 'OK'
+            };
         }
         catch (error) {
             console.error('Chat error:', error);
-            throw new common_1.HttpException('Failed to process chat message', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+            return {
+                success: false,
+                data: null,
+                message: error.message || 'Failed to process chat message'
+            };
         }
     }
     async getMoodRecommendations(body) {
         if (!body.occasion || !body.mood || !body.budget) {
-            throw new common_1.HttpException('Occasion, mood, and budget are required', common_1.HttpStatus.BAD_REQUEST);
+            return {
+                success: false,
+                data: null,
+                message: 'Occasion, mood, and budget are required'
+            };
         }
         if (body.budget <= 0) {
-            throw new common_1.HttpException('Budget must be greater than 0', common_1.HttpStatus.BAD_REQUEST);
+            return {
+                success: false,
+                data: null,
+                message: 'Budget must be greater than 0'
+            };
         }
         try {
             const recommendations = await this.recommendationService.getMoodRecommendations(body);
-            return recommendations;
+            return {
+                success: true,
+                data: recommendations,
+                message: 'OK'
+            };
         }
         catch (error) {
             console.error('Mood recommendation error:', error);
-            throw new common_1.HttpException('Failed to generate recommendations', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+            return {
+                success: false,
+                data: null,
+                message: error.message || 'Failed to generate recommendations'
+            };
         }
     }
     async embedProducts() {

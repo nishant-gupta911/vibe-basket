@@ -21,7 +21,7 @@ export const useCart = () => {
     }
   };
 
-  const addToCart = async (productId: number, quantity: number = 1) => {
+  const addToCart = async (productId: string, quantity: number = 1) => {
     try {
       setError(null);
       setLoading(true);
@@ -37,7 +37,7 @@ export const useCart = () => {
     }
   };
 
-  const updateCartItem = async (itemId: number, quantity: number) => {
+  const updateCartItem = async (itemId: string, quantity: number) => {
     try {
       setError(null);
       setLoading(true);
@@ -53,7 +53,7 @@ export const useCart = () => {
     }
   };
 
-  const removeCartItem = async (itemId: number) => {
+  const removeCartItem = async (itemId: string) => {
     try {
       setError(null);
       setLoading(true);

@@ -1,15 +1,15 @@
 import { api } from '@/lib/api';
 
 export interface OrderItem {
-  productId: number;
+  productId: string;
   quantity: number;
   price: number;
   name: string;
 }
 
 export interface Order {
-  id: number;
-  userId: number;
+  id: string;
+  userId: string;
   items: OrderItem[];
   totalAmount: number;
   status: 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';

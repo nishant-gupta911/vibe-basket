@@ -1,4 +1,5 @@
 import { IsString, IsNumber, IsOptional, IsBoolean, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateProductDto {
   @IsString()
@@ -35,9 +36,11 @@ export class QueryProductDto {
 
   @IsNumber()
   @IsOptional()
+  @Type(() => Number)
   page?: number;
 
   @IsNumber()
   @IsOptional()
+  @Type(() => Number)
   limit?: number;
 }

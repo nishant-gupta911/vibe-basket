@@ -9,8 +9,24 @@ export declare class AIController {
     chat(body: {
         message: string;
         history?: ChatMessage[];
-    }): Promise<import("./chatbot.service").ChatResponse>;
-    getMoodRecommendations(body: MoodRequest): Promise<import("./recommendation.service").MoodRecommendation>;
+    }): Promise<{
+        success: boolean;
+        data: import("./chatbot.service").ChatResponse;
+        message: string;
+    } | {
+        success: boolean;
+        data: any;
+        message: any;
+    }>;
+    getMoodRecommendations(body: MoodRequest): Promise<{
+        success: boolean;
+        data: import("./recommendation.service").MoodRecommendation;
+        message: string;
+    } | {
+        success: boolean;
+        data: any;
+        message: any;
+    }>;
     embedProducts(): Promise<{
         message: string;
         embedded: number;

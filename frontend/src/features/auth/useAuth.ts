@@ -15,7 +15,7 @@ export const useAuth = () => {
       setLoading(true);
       const response = await authService.register(data);
       setUser(response.data.user);
-      router.push('/products');
+      router.push('/profile');
       return response;
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Registration failed';
@@ -32,7 +32,7 @@ export const useAuth = () => {
       setLoading(true);
       const response = await authService.login(data);
       setUser(response.data.user);
-      router.push('/products');
+      router.push('/profile');
       return response;
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Login failed';

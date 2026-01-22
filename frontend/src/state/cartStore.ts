@@ -1,11 +1,11 @@
 import { create } from 'zustand';
 
 export interface CartItem {
-  id: number;
-  productId: number;
+  id: string;
+  productId: string;
   quantity: number;
   product: {
-    id: number;
+    id: string;
     name: string;
     price: number;
     image: string;
@@ -14,8 +14,8 @@ export interface CartItem {
 }
 
 export interface Cart {
-  id: number;
-  userId: number;
+  id: string;
+  userId: string;
   items: CartItem[];
 }
 

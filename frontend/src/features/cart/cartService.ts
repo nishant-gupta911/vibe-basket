@@ -2,12 +2,12 @@ import { api } from '@/lib/api';
 import { Cart, CartItem } from '@/state/cartStore';
 
 export interface AddToCartData {
-  productId: number;
+  productId: string;
   quantity: number;
 }
 
 export interface UpdateCartItemData {
-  productId: number;
+  productId: string;
   quantity: number;
 }
 
@@ -18,22 +18,22 @@ export const cartService = {
   },
 
   addToCart: async (data: AddToCartData) => {
-    const response = await api.post<Cart>('/cart/items', data);
+    const response = await api.post<Cart>('/cart', data);
     return response;
   },
 
-  updateCartItem: async (itemId: number, quantity: number) => {
-    const response = await api.patch<Cart>(`/cart/items/${itemId}`, { quantity });
+  updateCartItem: async (itemId: string, quantity: number) => {
+    const response = await api.patch<Cart>(`/cart/${itemId}`, { quantity });
     return response;
   },
 
-  removeCartItem: async (itemId: number) => {
-    const response = await api.delete<Cart>(`/cart/items/${itemId}`);
+  removeCartItem: async (itemId: string) => {
+    const response = await api.delete<Cart>(`/cart/${itemId}`);
     return response;
   },
 
   clearCart: async () => {
-    const response = await api.delete<void>('/cart/clear');
+    const response = await api.delete<void>('/cart');
     return response;
   },
 };
