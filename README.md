@@ -13,10 +13,12 @@ A modern, production-ready e-commerce platform built with Next.js 15, NestJS, Po
 - ✅ Responsive design with Tailwind CSS
 
 ### AI-Powered Features (Phase 4) 🤖
-- ✅ **Shopping Assistant Chatbot** - Natural language product search
-- ✅ **Mood-Based Recommender** - AI suggests products based on occasion, mood, and budget
+- ✅ **Shopping Assistant Chatbot** - Natural language product search at `/chat`
+- ✅ **Mood-Based Recommender** - AI suggests products based on occasion, mood, and budget at `/mood`
 - ✅ **Semantic Search** - Vector similarity search using pgvector
 - ✅ **Smart Product Embeddings** - OpenAI text-embedding-3-small
+- ✅ **Product Card Integration** - AI recommendations display with add-to-cart functionality
+- ✅ **Real-time Chat UI** - Interactive messaging with product suggestions
 
 ## 🏗️ Tech Stack
 
@@ -214,6 +216,7 @@ EMBEDDING_MODEL=text-embedding-3-small
 ### Frontend (.env.local)
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:4000/api
+NEXT_PUBLIC_AI_ENABLED=true
 ```
 
 ## 📦 Phase Completion
@@ -242,8 +245,13 @@ npm run test
 2. Browse products
 3. Add items to cart
 4. Create an order
-5. Try the AI chatbot at `/chatbot`
+5. Try the AI chatbot at `/chat`
+   - Ask: "Suggest a gift for a 20 year old under 1000"
+   - View recommended products with add-to-cart buttons
 6. Use mood finder at `/mood`
+   - Select: Birthday occasion, Excited mood, $1500 budget
+   - Get personalized recommendations
+   - Use "Add All to Cart" for bulk adding
 
 ## 🚀 Deployment
 

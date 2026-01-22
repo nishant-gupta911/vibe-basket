@@ -21,15 +21,27 @@ export class AIController {
     @Body() body: { message: string; history?: ChatMessage[] }
   ) {
     if (!body.message) {
-      throw new HttpException('Message is required', HttpStatus.BAD_REQUEST);
+      return {
+        success: false,
+        data: null,
+        message: 'Message is required'
+      };
     }
 
     try {
       const response = await this.chatbotService.chat(body.message, body.history);
-      return response;
+      return {
+        success: true,
+        data: response,
+        message: 'OK'
+      };
     } catch (error) {
       console.error('Chat error:', error);
-      throw new HttpException('Failed to process chat message', HttpStatus.INTERNAL_SERVER_ERROR);
+      return {
+        success: false,
+        data: null,
+        message: error.message || 'Failed to process chat message'
+      };
     }
   }
 
@@ -37,25 +49,35 @@ export class AIController {
   @UseGuards(JwtAuthGuard)
   async getMoodRecommendations(@Body() body: MoodRequest) {
     if (!body.occasion || !body.mood || !body.budget) {
-      throw new HttpException(
-        'Occasion, mood, and budget are required',
-        HttpStatus.BAD_REQUEST
-      );
+      return {
+        success: false,
+        data: null,
+        message: 'Occasion, mood, and budget are required'
+      };
     }
 
     if (body.budget <= 0) {
-      throw new HttpException('Budget must be greater than 0', HttpStatus.BAD_REQUEST);
+      return {
+        success: false,
+        data: null,
+        message: 'Budget must be greater than 0'
+      };
     }
 
     try {
       const recommendations = await this.recommendationService.getMoodRecommendations(body);
-      return recommendations;
+      return {
+        success: true,
+        data: recommendations,
+        message: 'OK'
+      };
     } catch (error) {
       console.error('Mood recommendation error:', error);
-      throw new HttpException(
-        'Failed to generate recommendations',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+      return {
+        success: false,
+        data: null,
+        message: error.message || 'Failed to generate recommendations'
+      };
     }
   }
 

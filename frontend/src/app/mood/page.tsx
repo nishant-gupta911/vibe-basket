@@ -1,13 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import { Sparkles, Loader2, ShoppingBag } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ProductCard } from '@/components/products/ProductCard';
+import { useCart } from '@/features/cart/useCart';
+import { api } from '@/lib/api';
+import { toast } from 'sonner';
 
 interface ProductSuggestion {
   productId: string;
   reason: string;
-  product: {
+  product?: {
     id: string;
     title: string;
     price: number;
@@ -16,253 +29,296 @@ interface ProductSuggestion {
   };
 }
 
+const occasions = [
+  'Birthday',
+  'Anniversary',
+  'Wedding',
+  'Graduation',
+  'Christmas',
+  'Valentine\'s Day',
+  'Mother\'s Day',
+  'Father\'s Day',
+  'Just Because',
+  'Thank You',
+];
+
+const moods = [
+  'Excited',
+  'Romantic',
+  'Thoughtful',
+  'Fun',
+  'Elegant',
+  'Casual',
+  'Professional',
+  'Adventurous',
+  'Relaxed',
+  'Energetic',
+];
+
+const genders = ['Male', 'Female', 'Unisex'];
+
 export default function MoodPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [occasion, setOccasion] = useState('');
+  const [mood, setMood] = useState('');
+  const [budget, setBudget] = useState('');
+  const [gender, setGender] = useState('');
+  const [age, setAge] = useState('');
   const [suggestions, setSuggestions] = useState<ProductSuggestion[]>([]);
-  
-  const [formData, setFormData] = useState({
-    occasion: '',
-    mood: '',
-    budget: '',
-    gender: '',
-    age: '',
-  });
+  const [isLoading, setIsLoading] = useState(false);
+  const { addToCart } = useCart();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+
+    if (!occasion || !mood || !budget) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const budgetNum = parseFloat(budget);
+    if (isNaN(budgetNum) || budgetNum <= 0) {
+      toast.error('Please enter a valid budget');
+      return;
+    }
+
+    setIsLoading(true);
     setSuggestions([]);
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
+      const payload: any = {
+        occasion,
+        mood,
+        budget: budgetNum,
+      };
 
-      const response = await axios.post(
-        'http://localhost:4000/ai/mood',
-        {
-          occasion: formData.occasion,
-          mood: formData.mood,
-          budget: parseFloat(formData.budget),
-          gender: formData.gender || undefined,
-          age: formData.age ? parseInt(formData.age) : undefined,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
+      if (gender) payload.gender = gender;
+      if (age) payload.age = parseInt(age);
+
+      const response = await api.post('/ai/mood', payload);
+
+      if (response.success) {
+        setSuggestions(response.data.suggestions || []);
+        if (response.data.suggestions.length === 0) {
+          toast.info('No products found matching your criteria. Try adjusting your budget or preferences.');
+        } else {
+          toast.success(`Found ${response.data.suggestions.length} perfect matches for you!`);
         }
-      );
-
-      setSuggestions(response.data.suggestions);
+      } else {
+        throw new Error(response.message);
+      }
     } catch (error: any) {
-      console.error('Recommendation error:', error);
-      alert('Failed to get recommendations. Please try again.');
+      console.error('Mood recommendation error:', error);
+      toast.error(error.message || 'Failed to get recommendations');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleAddToCart = async (productId: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/login');
-        return;
+  const handleAddAllToCart = async () => {
+    if (suggestions.length === 0) return;
+
+    let successCount = 0;
+    for (const suggestion of suggestions) {
+      try {
+        await addToCart(suggestion.productId, 1);
+        successCount++;
+      } catch (error) {
+        console.error(`Failed to add ${suggestion.productId}:`, error);
       }
+    }
 
-      await axios.post(
-        'http://localhost:4000/cart/add',
-        { productId, quantity: 1 },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      alert('Added to cart!');
-    } catch (error) {
-      console.error('Add to cart error:', error);
-      alert('Failed to add to cart');
+    if (successCount > 0) {
+      toast.success(`Added ${successCount} items to cart!`);
+    } else {
+      toast.error('Failed to add items to cart');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Mood-Based Product Finder
-          </h1>
-          <p className="text-gray-600">
-            Tell us about your occasion and mood, and we'll find the perfect products for you!
-          </p>
-        </div>
+    <div className="container mx-auto max-w-6xl py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
+          <Sparkles className="w-8 h-8 text-primary" />
+          Mood-Based Recommendations
+        </h1>
+        <p className="text-muted-foreground">
+          Tell us about your occasion and mood, and we&apos;ll find the perfect products for you!
+        </p>
+      </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Form */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Occasion *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.occasion}
-                  onChange={(e) => setFormData({ ...formData, occasion: e.target.value })}
-                  placeholder="e.g., Birthday party, Date night, Job interview"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mood *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.mood}
-                  onChange={(e) => setFormData({ ...formData, mood: e.target.value })}
-                  placeholder="e.g., Happy, Confident, Relaxed"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Budget ($) *
-                </label>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  step="0.01"
-                  value={formData.budget}
-                  onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                  placeholder="e.g., 100"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Gender (Optional)
-                </label>
-                <select
-                  value={formData.gender}
-                  onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Any</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="unisex">Unisex</option>
-                </select>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Age (Optional)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="120"
-                  value={formData.age}
-                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                  placeholder="e.g., 25"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+        <div className="lg:col-span-1">
+          <form onSubmit={handleSubmit} className="space-y-6 bg-card p-6 rounded-lg border">
+            <div>
+              <Label htmlFor="occasion" className="required">
+                Occasion *
+              </Label>
+              <Select value={occasion} onValueChange={setOccasion}>
+                <SelectTrigger id="occasion">
+                  <SelectValue placeholder="Select occasion" />
+                </SelectTrigger>
+                <SelectContent>
+                  {occasions.map((occ) => (
+                    <SelectItem key={occ} value={occ}>
+                      {occ}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
-            >
-              {loading ? 'Finding perfect matches...' : 'Get Recommendations'}
-            </button>
+            <div>
+              <Label htmlFor="mood" className="required">
+                Mood *
+              </Label>
+              <Select value={mood} onValueChange={setMood}>
+                <SelectTrigger id="mood">
+                  <SelectValue placeholder="Select mood" />
+                </SelectTrigger>
+                <SelectContent>
+                  {moods.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {m}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="budget" className="required">
+                Budget * ($)
+              </Label>
+              <Input
+                id="budget"
+                type="number"
+                min="1"
+                step="0.01"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                placeholder="e.g., 1000"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="gender">Gender (Optional)</Label>
+              <Select value={gender} onValueChange={setGender}>
+                <SelectTrigger id="gender">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  {genders.map((g) => (
+                    <SelectItem key={g} value={g}>
+                      {g}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="age">Age (Optional)</Label>
+              <Input
+                id="age"
+                type="number"
+                min="1"
+                max="120"
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+                placeholder="e.g., 25"
+              />
+            </div>
+
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Finding Perfect Matches...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Get Recommendations
+                </>
+              )}
+            </Button>
           </form>
         </div>
 
         {/* Results */}
-        {suggestions.length > 0 && (
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Perfect Matches for You
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {suggestions.map((suggestion) => (
-                <div
-                  key={suggestion.productId}
-                  className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-                >
-                  <img
-                    src={suggestion.product.image || '/placeholder.png'}
-                    alt={suggestion.product.title}
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900 flex-1">
-                        {suggestion.product.title}
-                      </h3>
-                      <span className="text-blue-600 font-bold ml-2">
-                        ${suggestion.product.price}
-                      </span>
-                    </div>
-
-                    <p className="text-sm text-gray-500 mb-3">
-                      {suggestion.product.category}
-                    </p>
-
-                    <div className="bg-blue-50 rounded-lg p-3 mb-4">
-                      <p className="text-sm text-gray-700 italic">{suggestion.reason}</p>
-                    </div>
-
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => router.push(`/products/${suggestion.product.id}`)}
-                        className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
-                      >
-                        View Details
-                      </button>
-                      <button
-                        onClick={() => handleAddToCart(suggestion.product.id)}
-                        className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                      >
-                        Add to Cart
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+        <div className="lg:col-span-2">
+          {isLoading ? (
+            <div className="h-64 flex items-center justify-center">
+              <div className="text-center">
+                <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-primary" />
+                <p className="text-muted-foreground">
+                  Finding the perfect products for you...
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          ) : suggestions.length > 0 ? (
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-semibold">
+                  Your Perfect Matches ({suggestions.length})
+                </h2>
+                <Button onClick={handleAddAllToCart} variant="outline">
+                  <ShoppingBag className="w-4 h-4 mr-2" />
+                  Add All to Cart
+                </Button>
+              </div>
 
-        {/* Empty State */}
-        {!loading && suggestions.length === 0 && (
-          <div className="text-center text-gray-500 py-12">
-            <svg
-              className="w-16 h-16 mx-auto mb-4 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            <p>Fill out the form above to get personalized recommendations</p>
-          </div>
-        )}
+              <div className="space-y-6">
+                {suggestions.map((suggestion, index) => (
+                  <div
+                    key={index}
+                    className="bg-card p-6 rounded-lg border space-y-4"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-bold text-primary">
+                          {index + 1}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-muted-foreground italic">
+                          &quot;{suggestion.reason}&quot;
+                        </p>
+                      </div>
+                    </div>
+
+                    {suggestion.product && (
+                      <ProductCard
+                        product={{
+                          id: suggestion.product.id,
+                          name: suggestion.product.title,
+                          price: suggestion.product.price,
+                          image: suggestion.product.image || '/placeholder.png',
+                          category: suggestion.product.category,
+                          description: '',
+                          stock: 1,
+                          createdAt: new Date().toISOString(),
+                          updatedAt: new Date().toISOString(),
+                        }}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-center">
+              <div>
+                <Sparkles className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-2">Ready to find your perfect match?</p>
+                <p className="text-muted-foreground">
+                  Fill out the form and let our AI help you discover amazing products!
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
