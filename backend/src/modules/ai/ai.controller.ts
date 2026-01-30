@@ -141,28 +141,29 @@ export class AIController {
     }
   }
 
-  @Post('semantic-search')
-  async semanticSearch(@Body() body: { query: string; limit?: number }) {
-    if (!body.query) {
-      throw new HttpException('Query is required', HttpStatus.BAD_REQUEST);
-    }
-
-    try {
-      const productIds = await this.chatbotService.semanticSearch(
-        body.query,
-        body.limit || 10
-      );
-
-      const products = await this.prisma.product.findMany({
-        where: {
-          id: { in: productIds },
-        },
-      });
-
-      return { products };
-    } catch (error) {
-      console.error('Semantic search error:', error);
-      throw new HttpException('Failed to search products', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
+  // @Post('semantic-search')
+  // Deprecated: Use /chat endpoint with product_search intent instead
+  // async semanticSearch(@Body() body: { query: string; limit?: number }) {
+  //   if (!body.query) {
+  //     throw new HttpException('Query is required', HttpStatus.BAD_REQUEST);
+  //   }
+  //
+  //   try {
+  //     const productIds = await this.chatbotService.semanticSearch(
+  //       body.query,
+  //       body.limit || 10
+  //     );
+  //
+  //     const products = await this.prisma.product.findMany({
+  //       where: {
+  //         id: { in: productIds },
+  //       },
+  //     });
+  //
+  //     return { products };
+  //   } catch (error) {
+  //     console.error('Semantic search error:', error);
+  //     throw new HttpException('Failed to search products', HttpStatus.INTERNAL_SERVER_ERROR);
+  //   }
+  // }
 }
