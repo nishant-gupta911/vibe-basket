@@ -1,10 +1,23 @@
-import OpenAI from 'openai';
-import { PrismaService } from '../../config/prisma.service';
-import { embeddingService } from './embedding.service';
+/**
+ * CATALOG-AWARE CONVERSATIONAL SHOPPING ASSISTANT
+ * 
+ * A soft-grounded, intelligent assistant that helps users find products.
+ * Feels natural like ChatGPT but stays grounded in the product catalog.
+ * 
+ * NO AI APIs - pure rule-based conversational logic
+ * Handles: recommendations, search, budget filters, style advice, comparisons
+ */
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { PrismaService } from '../../config/prisma.service';
+import { classifyIntent, Intent, UserContext } from './intent-classifier';
+import { 
+  filterProducts, 
+  rankProducts, 
+  selectTopProducts,
+  Product,
+  ScoredProduct 
+} from './product-ranker';
+import { generateResponse } from './response-generator';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -20,111 +33,123 @@ export class ChatbotService {
   constructor(private prisma: PrismaService) {}
 
   /**
-   * Process user chat message and return response with relevant products
+   * Process user chat message and return intelligent response with relevant products
+   * Uses rule-based NLU + product ranking + natural response generation
    */
   async chat(message: string, conversationHistory: ChatMessage[] = []): Promise<ChatResponse> {
     try {
-      // Get product context for the AI
-      const products = await this.prisma.product.findMany({
+      // Step 1: Classify user intent and extract context
+      const classified = classifyIntent(message);
+      console.log('Intent:', classified.intent, 'Context:', classified.context);
+
+      // Step 2: Handle special cases immediately
+      if (classified.intent === Intent.GREETING) {
+        return {
+          reply: generateResponse(Intent.GREETING, {}, [], message),
+          productIds: null,
+        };
+      }
+
+      if (classified.intent === Intent.OFF_TOPIC) {
+        return {
+          reply: generateResponse(Intent.OFF_TOPIC, {}, [], message),
+          productIds: null,
+        };
+      }
+
+      // Step 3: Fetch all products from catalog
+      const allProducts = await this.prisma.product.findMany({
         select: {
           id: true,
           title: true,
           description: true,
           category: true,
           price: true,
+          image: true,
+          inStock: true,
         },
-        take: 20, // Limit for context window
       });
 
-      const productContext = products
-        .map(
-          (p) =>
-            `ID: ${p.id}, Title: ${p.title}, Category: ${p.category}, Price: $${p.price}, Description: ${p.description || 'N/A'}`
-        )
-        .join('\n');
+      if (allProducts.length === 0) {
+        return {
+          reply: "I'm sorry, but we don't have any products available right now. Please check back later!",
+          productIds: null,
+        };
+      }
 
-      const systemPrompt = `You are a helpful shopping assistant for an e-commerce store. 
-Help users find products based on their needs and preferences.
+      // Step 4: Filter products based on user context (budget, category, etc.)
+      const filteredProducts = filterProducts(allProducts, classified.context);
 
-Available Products:
-${productContext}
+      // Step 5: Rank products by relevance
+      const rankedProducts = rankProducts(
+        filteredProducts,
+        classified.context,
+        message
+      );
 
-When recommending products, include their IDs in your response using the format: [PRODUCT_IDS: id1, id2, id3]
-Be conversational, helpful, and concise. If no products match, suggest alternatives or ask clarifying questions.`;
+      // Step 6: Select top products with diversity
+      const topProducts = selectTopProducts(rankedProducts, 5);
 
-      const messages: ChatMessage[] = [
-        { role: 'system', content: systemPrompt },
-        ...conversationHistory,
-        { role: 'user', content: message },
-      ];
+      // Step 7: Generate natural conversational response
+      const reply = generateResponse(
+        classified.intent,
+        classified.context,
+        topProducts,
+        message
+      );
 
-      const completion = await openai.chat.completions.create({
-        model: process.env.AI_MODEL || 'gpt-4o-mini',
-        messages: messages as any,
-        temperature: 0.7,
-        max_tokens: 500,
-      });
-
-      const reply = completion.choices[0].message.content || 'Sorry, I could not process your request.';
-
-      // Extract product IDs from response
-      const productIds = this.extractProductIds(reply, products.map((p) => p.id));
-
-      // Clean the reply to remove product ID markers
-      const cleanReply = reply.replace(/\[PRODUCT_IDS:.*?\]/g, '').trim();
+      // Step 8: Extract product IDs for UI display
+      const productIds = topProducts.length > 0
+        ? topProducts.map(p => p.product.id)
+        : null;
 
       return {
-        reply: cleanReply,
-        productIds: productIds.length > 0 ? productIds : null,
+        reply,
+        productIds,
       };
+
     } catch (error: any) {
       console.error('Chatbot error:', error);
-      if (error.status === 401) {
-        throw new Error('OpenAI API key is invalid');
-      }
-      if (error.status === 429) {
-        throw new Error('OpenAI API quota exceeded. Please check your billing.');
-      }
-      throw new Error('Failed to process chat message');
+      
+      // Graceful error handling - never crash
+      return {
+        reply: "I'm having a bit of trouble processing that. Could you rephrase your question? I'm here to help you find great products!",
+        productIds: null,
+      };
     }
   }
 
   /**
-   * Search products using semantic search
+   * Get product recommendations based on use case
+   * Used for quick recommendation queries
    */
-  async semanticSearch(query: string, limit: number = 5): Promise<string[]> {
-    try {
-      // Generate embedding for query
-      const queryEmbedding = await embeddingService.generateEmbedding(query);
+  async getRecommendations(
+    useCase: string,
+    budget?: number,
+    category?: string
+  ): Promise<Product[]> {
+    const context: UserContext = {
+      useCase,
+    };
 
-      // Use raw SQL for vector similarity search
-      const products: any[] = await this.prisma.$queryRaw`
-        SELECT id, (embedding <=> ${JSON.stringify(queryEmbedding)}::vector) as distance
-        FROM "Product"
-        WHERE embedding IS NOT NULL
-        ORDER BY distance
-        LIMIT ${limit}
-      `;
-
-      return products.map((p) => p.id);
-    } catch (error) {
-      console.error('Semantic search error:', error);
-      return [];
+    if (budget) {
+      context.budget = { min: 0, max: budget };
     }
-  }
 
-  /**
-   * Extract product IDs from AI response
-   */
-  private extractProductIds(text: string, validIds: string[]): string[] {
-    const matches = text.match(/\[PRODUCT_IDS:(.*?)\]/);
-    if (!matches) return [];
+    if (category) {
+      context.categories = [category];
+    }
 
-    const ids = matches[1]
-      .split(',')
-      .map((id) => id.trim())
-      .filter((id) => validIds.includes(id));
+    const products = await this.prisma.product.findMany({
+      where: {
+        inStock: true,
+      },
+    });
 
-    return ids;
+    const filtered = filterProducts(products, context);
+    const ranked = rankProducts(filtered, context, useCase);
+    const top = selectTopProducts(ranked, 5);
+
+    return top.map(p => p.product);
   }
 }

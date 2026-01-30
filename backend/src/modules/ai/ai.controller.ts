@@ -1,8 +1,7 @@
-import { Controller, Post, Body, UseGuards, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, HttpException, HttpStatus } from '@nestjs/common';
 import { ChatbotService, ChatMessage } from './chatbot.service';
 import { RecommendationService, MoodRequest } from './recommendation.service';
 import { PrismaService } from '../../config/prisma.service';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { embeddingService } from './embedding.service';
 
 @Controller('ai')
@@ -16,7 +15,6 @@ export class AIController {
   }
 
   @Post('chat')
-  @UseGuards(JwtAuthGuard)
   async chat(
     @Body() body: { message: string; history?: ChatMessage[] }
   ) {
@@ -46,7 +44,6 @@ export class AIController {
   }
 
   @Post('mood')
-  @UseGuards(JwtAuthGuard)
   async getMoodRecommendations(@Body() body: MoodRequest) {
     if (!body.occasion || !body.mood || !body.budget) {
       return {
@@ -82,7 +79,6 @@ export class AIController {
   }
 
   @Post('embed-products')
-  @UseGuards(JwtAuthGuard)
   async embedProducts() {
     try {
       const products = await this.prisma.product.findMany({
@@ -146,7 +142,6 @@ export class AIController {
   }
 
   @Post('semantic-search')
-  @UseGuards(JwtAuthGuard)
   async semanticSearch(@Body() body: { query: string; limit?: number }) {
     if (!body.query) {
       throw new HttpException('Query is required', HttpStatus.BAD_REQUEST);
