@@ -1,6 +1,3 @@
--- CreateExtension
-CREATE EXTENSION IF NOT EXISTS "vector";
-
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -22,7 +19,8 @@ CREATE TABLE "Product" (
     "price" DOUBLE PRECISION NOT NULL,
     "image" TEXT,
     "inStock" BOOLEAN NOT NULL DEFAULT true,
-    "embedding" vector(1536),
+    "stock" INTEGER NOT NULL DEFAULT 100,
+    "tags" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
