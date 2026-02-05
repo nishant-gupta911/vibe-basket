@@ -17,10 +17,11 @@ interface FadeProps {
   children: React.ReactNode;
   show?: boolean;
   duration?: 'fast' | 'normal' | 'slow';
+  delay?: number;
   className?: string;
 }
 
-export function Fade({ children, show = true, duration = 'normal', className }: FadeProps) {
+export function Fade({ children, show = true, duration = 'normal', delay = 0, className }: FadeProps) {
   const durations = {
     fast: 'duration-150',
     normal: 'duration-300',
@@ -35,7 +36,10 @@ export function Fade({ children, show = true, duration = 'normal', className }: 
         show ? 'opacity-100' : 'opacity-0 pointer-events-none',
         className
       )}
-      style={{ transitionTimingFunction: motionTokens.easing.easeOutExpo }}
+      style={{ 
+        transitionTimingFunction: motionTokens.easing.easeOutExpo,
+        transitionDelay: delay ? `${delay}ms` : undefined,
+      }}
     >
       {children}
     </div>
@@ -52,6 +56,7 @@ interface SlideProps {
   direction?: 'up' | 'down' | 'left' | 'right';
   distance?: 'sm' | 'md' | 'lg';
   duration?: 'fast' | 'normal' | 'slow';
+  delay?: number;
   className?: string;
 }
 
@@ -61,6 +66,7 @@ export function Slide({
   direction = 'up',
   distance = 'md',
   duration = 'normal',
+  delay = 0,
   className,
 }: SlideProps) {
   const distances = {
@@ -91,7 +97,10 @@ export function Slide({
         translateMap[direction],
         className
       )}
-      style={{ transitionTimingFunction: motionTokens.easing.easeOutExpo }}
+      style={{ 
+        transitionTimingFunction: motionTokens.easing.easeOutExpo,
+        transitionDelay: delay ? `${delay}ms` : undefined,
+      }}
     >
       {children}
     </div>
@@ -107,6 +116,7 @@ interface ScaleProps {
   show?: boolean;
   origin?: 'center' | 'top' | 'bottom' | 'left' | 'right';
   duration?: 'fast' | 'normal' | 'slow';
+  delay?: number;
   className?: string;
 }
 
@@ -115,6 +125,7 @@ export function Scale({
   show = true,
   origin = 'center',
   duration = 'normal',
+  delay = 0,
   className,
 }: ScaleProps) {
   const durations = {
@@ -140,7 +151,10 @@ export function Scale({
         show ? 'scale-100 opacity-100' : 'scale-95 opacity-0',
         className
       )}
-      style={{ transitionTimingFunction: motionTokens.easing.easeOutExpo }}
+      style={{ 
+        transitionTimingFunction: motionTokens.easing.easeOutExpo,
+        transitionDelay: delay ? `${delay}ms` : undefined,
+      }}
     >
       {children}
     </div>

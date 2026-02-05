@@ -40,7 +40,6 @@ export class ChatbotService {
     try {
       // Step 1: Classify user intent and extract context
       const classified = classifyIntent(message);
-      console.log('Intent:', classified.intent, 'Context:', classified.context);
 
       // Step 2: Handle special cases immediately
       if (classified.intent === Intent.GREETING) {

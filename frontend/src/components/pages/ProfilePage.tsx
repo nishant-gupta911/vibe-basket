@@ -184,11 +184,10 @@ export default function ProfilePage() {
                               order.status === 'DELIVERED' ? 'success' :
                               order.status === 'SHIPPED' ? 'info' :
                               order.status === 'PENDING' ? 'warning' :
-                              'default'
+                              'neutral'
                             }
-                          >
-                            {order.status}
-                          </StatusBadge>
+                            label={order.status}
+                          />
                         </div>
                         <p className="text-sm text-muted-foreground mb-1">
                           {new Date(order.createdAt).toLocaleDateString('en-US', {

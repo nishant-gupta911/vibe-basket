@@ -185,7 +185,7 @@ export function ProgressBar({
 // =============================================================================
 
 interface EmptyStateProps {
-  icon?: React.ComponentType<{ className?: string; size?: number }> | React.ReactNode;
+  icon?: React.ElementType | React.ReactNode;
   title: string;
   message?: string;
   description?: string;
@@ -208,10 +208,16 @@ export function EmptyState({
   
   const renderIcon = () => {
     if (!Icon) return null;
-    if (typeof Icon === 'function') {
-      return <Icon className="w-8 h-8 text-muted-foreground" />;
+    // Check if it's a valid React element (already rendered)
+    if (React.isValidElement(Icon)) {
+      return Icon;
     }
-    return Icon;
+    // Check if it's a component type (function/class)
+    if (typeof Icon === 'function' || (typeof Icon === 'object' && Icon !== null)) {
+      const IconComponent = Icon as React.ElementType;
+      return <IconComponent className="w-8 h-8 text-muted-foreground" />;
+    }
+    return null;
   };
   
   const renderAction = () => {

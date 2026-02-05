@@ -21,6 +21,10 @@ interface PremiumImageProps {
   priority?: boolean;
   quality?: number;
   hoverZoom?: boolean;
+  /** @deprecated Use hoverZoom instead */
+  zoomOnHover?: boolean;
+  /** @deprecated Use hoverZoom instead */
+  hoverEffect?: 'none' | 'zoom' | string;
   overlay?: 'none' | 'gradient' | 'vignette' | 'dark' | 'light';
   rounded?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
   objectFit?: 'cover' | 'contain' | 'fill' | 'none';
@@ -66,6 +70,8 @@ export function PremiumImage({
   priority = false,
   quality = 85,
   hoverZoom = false,
+  zoomOnHover,
+  hoverEffect,
   overlay = 'none',
   rounded = 'lg',
   objectFit = 'cover',
@@ -74,6 +80,9 @@ export function PremiumImage({
 }: PremiumImageProps) {
   const [isLoading, setIsLoading] = React.useState(true);
   const [hasError, setHasError] = React.useState(false);
+  
+  // Support deprecated props
+  const shouldZoom = hoverZoom || zoomOnHover || hoverEffect === 'zoom';
 
   const handleLoad = () => {
     setIsLoading(false);
@@ -92,7 +101,7 @@ export function PremiumImage({
         aspectRatioMap[aspectRatio],
         roundedMap[rounded],
         overlayMap[overlay],
-        hoverZoom && 'group',
+        shouldZoom && 'group',
         containerClassName
       )}
     >
@@ -139,7 +148,7 @@ export function PremiumImage({
           objectFit === 'fill' && 'object-fill',
           objectFit === 'none' && 'object-none',
           isLoading ? 'scale-105 blur-sm opacity-0' : 'scale-100 blur-0 opacity-100',
-          hoverZoom && 'group-hover:scale-110',
+          shouldZoom && 'group-hover:scale-110',
           className
         )}
         style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
