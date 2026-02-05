@@ -1,5 +1,6 @@
 import { Product } from '@/types';
-import { ProductCard } from './ProductCard';
+import { ProductCardPremium } from './ProductCardPremium';
+import { StaggerContainer, Slide } from '@/design-system/components/motion';
 
 interface ProductGridProps {
   products: Product[];
@@ -14,16 +15,12 @@ export function ProductGrid({ products, columns = 4 }: ProductGridProps) {
   };
 
   return (
-    <div className={`grid ${gridCols[columns]} gap-6`}>
+    <StaggerContainer staggerDelay={0.05} className={`grid ${gridCols[columns]} gap-6`}>
       {products.map((product, index) => (
-        <div
-          key={product.id}
-          className="animate-fade-in"
-          style={{ animationDelay: `${index * 50}ms` }}
-        >
-          <ProductCard product={product} />
-        </div>
+        <Slide key={product.id} direction="up" delay={index * 0.03}>
+          <ProductCardPremium product={product} />
+        </Slide>
       ))}
-    </div>
+    </StaggerContainer>
   );
 }

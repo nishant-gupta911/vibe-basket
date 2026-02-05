@@ -22,12 +22,11 @@ export function Navbar() {
   const router = useRouter();
   
   const { getCartItemCount, fetchCart } = useCart();
-  const { isAuthenticated, user, logout, checkAuth } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   
   const itemCount = getCartItemCount();
 
   useEffect(() => {
-    checkAuth();
     if (isAuthenticated) {
       fetchCart();
     }

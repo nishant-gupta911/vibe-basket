@@ -173,10 +173,13 @@ export function Navbar() {
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
                 className={cn(
                   'w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                   isScrolled
                     ? 'text-foreground/80 hover:bg-secondary'
                     : 'text-white/80 hover:bg-white/10'
                 )}
+                aria-label={isSearchOpen ? 'Close search' : 'Open search'}
+                aria-expanded={isSearchOpen}
               >
                 <Search className="w-5 h-5" />
               </button>
@@ -186,14 +189,19 @@ export function Navbar() {
                 href="/cart"
                 className={cn(
                   'relative w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                   isScrolled
                     ? 'text-foreground/80 hover:bg-secondary'
                     : 'text-white/80 hover:bg-white/10'
                 )}
+                aria-label={`Shopping cart${itemCount > 0 ? `, ${itemCount} items` : ''}`}
               >
                 <ShoppingBag className="w-5 h-5" />
                 {itemCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                  <span 
+                    className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center"
+                    aria-hidden="true"
+                  >
                     {itemCount > 99 ? '99+' : itemCount}
                   </span>
                 )}
@@ -206,10 +214,12 @@ export function Navbar() {
                     <button
                       className={cn(
                         'hidden md:flex items-center gap-2 h-10 px-4 rounded-full transition-all duration-300',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                         isScrolled
                           ? 'text-foreground/80 hover:bg-secondary'
                           : 'text-white/80 hover:bg-white/10'
                       )}
+                      aria-label="User menu"
                     >
                       <User className="w-5 h-5" />
                       <span className="text-sm font-medium max-w-[100px] truncate">
@@ -253,10 +263,13 @@ export function Navbar() {
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className={cn(
                   'lg:hidden w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                   isScrolled
                     ? 'text-foreground/80 hover:bg-secondary'
                     : 'text-white/80 hover:bg-white/10'
                 )}
+                aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={isMenuOpen}
               >
                 {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
@@ -276,9 +289,11 @@ export function Navbar() {
             isScrolled ? 'bg-background/95 backdrop-blur-xl border-border/50' : 'bg-foreground/95 backdrop-blur-xl border-white/10'
           )}>
             <div className="container mx-auto px-6 lg:px-8">
-              <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
+              <form onSubmit={handleSearch} className="max-w-2xl mx-auto" role="search">
                 <div className="relative">
+                  <label htmlFor="search-input" className="sr-only">Search products</label>
                   <Input
+                    id="search-input"
                     type="text"
                     placeholder="Search for products..."
                     value={searchQuery}
@@ -300,6 +315,7 @@ export function Navbar() {
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-white text-foreground'
                     )}
+                    aria-label="Search"
                   >
                     <Search className="w-4 h-4" />
                   </Button>

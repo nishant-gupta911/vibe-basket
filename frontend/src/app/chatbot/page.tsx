@@ -3,6 +3,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { Send, Bot, User, Sparkles, ShoppingBag } from 'lucide-react';
+import { PremiumButton } from '@/design-system/components/premium-button';
+import { PremiumInput } from '@/design-system/components/premium-input';
+import { PremiumCard } from '@/design-system/components/premium-card';
+import { Fade, Slide, Scale, StaggerContainer, Reveal, HoverLift } from '@/design-system/components/motion';
+import { Spinner, ErrorState } from '@/design-system/components/loading-states';
+import { cn } from '@/lib/utils';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -19,6 +26,7 @@ export default function ChatbotPage() {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -30,34 +38,40 @@ export default function ChatbotPage() {
     scrollToBottom();
   }, [messages]);
 
+  const suggestedQuestions = [
+    "What's a good gift for under $50?",
+    "Show me the latest electronics",
+    "I need something for a birthday party",
+    "What are your bestsellers?",
+  ];
+
   const handleSend = async () => {
     if (!input.trim() || loading) return;
 
     const userMessage = input.trim();
     setInput('');
     setLoading(true);
+    setError(null);
 
     const newMessages = [...messages, { role: 'user' as const, content: userMessage }];
     setMessages(newMessages);
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/login');
-        return;
+      const token = localStorage.getItem('accessToken');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
       }
 
       const history = messages.map((m) => ({ role: m.role, content: m.content }));
 
       const response = await axios.post(
-        'http://localhost:4000/ai/chat',
+        'http://localhost:4000/api/ai/chat',
         {
           message: userMessage,
           history,
         },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers }
       );
 
       setMessages([
@@ -68,8 +82,9 @@ export default function ChatbotPage() {
           productIds: response.data.productIds,
         },
       ]);
-    } catch (error: any) {
-      console.error('Chat error:', error);
+    } catch (err) {
+      console.error('Chat error:', err);
+      setError('Failed to send message. Please try again.');
       setMessages([
         ...newMessages,
         {
@@ -94,92 +109,176 @@ export default function ChatbotPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
+      <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">Shopping Assistant</h1>
-          <p className="text-gray-600 mt-1">
-            Ask me anything about products, recommendations, or help finding what you need!
-          </p>
-        </div>
+        <Reveal>
+          <PremiumCard variant="glass" className="p-6 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg">
+                <Sparkles className="w-7 h-7 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground">Shopping Assistant</h1>
+                <p className="text-muted-foreground mt-1">
+                  Ask me anything about products, recommendations, or help finding what you need!
+                </p>
+              </div>
+            </div>
+          </PremiumCard>
+        </Reveal>
 
         {/* Chat Container */}
-        <div className="bg-white rounded-lg shadow-sm h-[calc(100vh-250px)] flex flex-col">
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[70%] rounded-lg p-3 ${
-                    message.role === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-900'
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
-
-                  {/* Product Links */}
-                  {message.productIds && message.productIds.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-300">
-                      <p className="text-sm font-semibold mb-2">Recommended Products:</p>
-                      <div className="space-y-1">
-                        {message.productIds.map((productId) => (
+        <Reveal delay={0.1}>
+          <PremiumCard variant="elevated" className="h-[calc(100vh-280px)] flex flex-col overflow-hidden">
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+              {messages.length === 1 && (
+                <Fade className="mb-6">
+                  <div className="text-center py-8">
+                    <Bot className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
+                    <p className="text-muted-foreground mb-6">Try asking something like:</p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {suggestedQuestions.map((question, i) => (
+                        <Scale key={i} delay={i * 0.05}>
                           <button
-                            key={productId}
-                            onClick={() => handleViewProduct(productId)}
-                            className="block w-full text-left text-sm bg-white text-blue-600 hover:bg-blue-50 px-3 py-2 rounded transition-colors"
+                            onClick={() => setInput(question)}
+                            className="px-4 py-2 rounded-full bg-secondary/50 hover:bg-secondary text-sm text-foreground transition-all duration-300 hover:scale-105"
                           >
-                            View Product →
+                            {question}
                           </button>
-                        ))}
+                        </Scale>
+                      ))}
+                    </div>
+                  </div>
+                </Fade>
+              )}
+
+              <StaggerContainer staggerDelay={0.05}>
+                {messages.map((message, index) => (
+                  <Slide
+                    key={index}
+                    direction={message.role === 'user' ? 'right' : 'left'}
+                    className={cn(
+                      'flex',
+                      message.role === 'user' ? 'justify-end' : 'justify-start'
+                    )}
+                  >
+                    <div className="flex items-start gap-3 max-w-[85%]">
+                      {message.role === 'assistant' && (
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center flex-shrink-0 shadow-md">
+                          <Bot className="w-5 h-5 text-primary-foreground" />
+                        </div>
+                      )}
+
+                      <div
+                        className={cn(
+                          'rounded-2xl px-4 py-3 transition-all duration-300',
+                          message.role === 'user'
+                            ? 'bg-primary text-primary-foreground rounded-tr-md'
+                            : 'bg-secondary/50 dark:bg-secondary/30 text-foreground rounded-tl-md'
+                        )}
+                      >
+                        <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+
+                        {/* Product Links */}
+                        {message.productIds && message.productIds.length > 0 && (
+                          <div className="mt-4 pt-3 border-t border-current/20">
+                            <p className="text-sm font-semibold mb-3 flex items-center gap-2">
+                              <ShoppingBag className="w-4 h-4" />
+                              Recommended Products:
+                            </p>
+                            <div className="space-y-2">
+                              {message.productIds.map((productId) => (
+                                <HoverLift key={productId}>
+                                  <button
+                                    onClick={() => handleViewProduct(productId)}
+                                    className={cn(
+                                      'block w-full text-left text-sm px-4 py-3 rounded-xl transition-all duration-300',
+                                      message.role === 'user'
+                                        ? 'bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground'
+                                        : 'bg-background hover:bg-background/80 text-foreground border border-border'
+                                    )}
+                                  >
+                                    <span className="flex items-center justify-between">
+                                      View Product
+                                      <span className="text-lg">→</span>
+                                    </span>
+                                  </button>
+                                </HoverLift>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {message.role === 'user' && (
+                        <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0">
+                          <User className="w-5 h-5 text-foreground" />
+                        </div>
+                      )}
+                    </div>
+                  </Slide>
+                ))}
+              </StaggerContainer>
+
+              {loading && (
+                <Fade className="flex justify-start">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-md">
+                      <Bot className="w-5 h-5 text-primary-foreground" />
+                    </div>
+                    <div className="bg-secondary/50 dark:bg-secondary/30 rounded-2xl rounded-tl-md px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <Spinner size="sm" />
+                        <span className="text-sm text-muted-foreground">Thinking...</span>
                       </div>
                     </div>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {loading && (
-              <div className="flex justify-start">
-                <div className="bg-gray-100 rounded-lg p-3">
-                  <div className="flex space-x-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
                   </div>
-                </div>
-              </div>
-            )}
+                </Fade>
+              )}
 
-            <div ref={messagesEndRef} />
-          </div>
+              {error && (
+                <Fade>
+                  <ErrorState
+                    title="Connection Error"
+                    message={error}
+                    onRetry={() => setError(null)}
+                    className="my-4"
+                  />
+                </Fade>
+              )}
 
-          {/* Input */}
-          <div className="border-t border-gray-200 p-4">
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ask me anything..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={loading}
-              />
-              <button
-                onClick={handleSend}
-                disabled={loading || !input.trim()}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-              >
-                Send
-              </button>
+              <div ref={messagesEndRef} />
             </div>
-          </div>
-        </div>
+
+            {/* Input */}
+            <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4">
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <PremiumInput
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Ask me anything..."
+                    disabled={loading}
+                    className="w-full"
+                  />
+                </div>
+                <PremiumButton
+                  onClick={handleSend}
+                  disabled={loading || !input.trim()}
+                  variant="premium"
+                  size="lg"
+                  className="px-6"
+                >
+                  <Send className="w-5 h-5" />
+                </PremiumButton>
+              </div>
+            </div>
+          </PremiumCard>
+        </Reveal>
       </div>
     </div>
   );

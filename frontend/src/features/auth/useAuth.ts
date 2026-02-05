@@ -14,11 +14,16 @@ export const useAuth = () => {
       setError(null);
       setLoading(true);
       const response = await authService.register(data);
-      setUser(response.data.user);
-      router.push('/profile');
-      return response;
+      
+      if (response.success && response.data && response.data.user) {
+        setUser(response.data.user);
+        router.push('/profile');
+        return response;
+      } else {
+        throw new Error('Invalid response format');
+      }
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Registration failed';
+      const errorMessage = err.response?.data?.message || err.message || 'Registration failed';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -31,11 +36,16 @@ export const useAuth = () => {
       setError(null);
       setLoading(true);
       const response = await authService.login(data);
-      setUser(response.data.user);
-      router.push('/profile');
-      return response;
+      
+      if (response.success && response.data && response.data.user) {
+        setUser(response.data.user);
+        router.push('/profile');
+        return response;
+      } else {
+        throw new Error('Invalid response format');
+      }
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Login failed';
+      const errorMessage = err.response?.data?.message || err.message || 'Login failed';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -50,18 +60,27 @@ export const useAuth = () => {
   };
 
   const checkAuth = async () => {
-    try {
-      const token = tokenManager.getAccessToken();
-      if (!token) {
-        setUser(null);
-        return;
-      }
+    const token = tokenManager.getAccessToken();
+    
+    if (!token) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
 
+    try {
       setLoading(true);
       const response = await authService.getProfile();
-      setUser(response.data);
+      
+      if (response.success && response.data) {
+        setUser(response.data);
+      } else {
+        setUser(null);
+      }
     } catch (err) {
+      // Silently handle auth failures - user just isn't logged in
       setUser(null);
+      tokenManager.clearTokens();
     } finally {
       setLoading(false);
     }

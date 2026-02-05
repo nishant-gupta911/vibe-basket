@@ -67,6 +67,18 @@ const processQueue = (error: Error | null, token: string | null = null) => {
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
+    // Don't log 401 errors on auth endpoints - they're expected when not logged in
+    const isAuthEndpoint = error.config?.url?.includes('/auth/');
+    if (!isAuthEndpoint || error.response?.status !== 401) {
+      console.error('API Error:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
+    }
+    
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     // If error is 401 and we haven't retried yet

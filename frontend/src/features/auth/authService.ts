@@ -21,7 +21,7 @@ export interface AuthResponse {
 export const authService = {
   register: async (data: RegisterData) => {
     const response = await api.post<AuthResponse>('/auth/register', data);
-    if (response.success) {
+    if (response.success && response.data) {
       tokenManager.setTokens(response.data.accessToken, response.data.refreshToken);
     }
     return response;
@@ -29,7 +29,7 @@ export const authService = {
 
   login: async (data: LoginData) => {
     const response = await api.post<AuthResponse>('/auth/login', data);
-    if (response.success) {
+    if (response.success && response.data) {
       tokenManager.setTokens(response.data.accessToken, response.data.refreshToken);
     }
     return response;

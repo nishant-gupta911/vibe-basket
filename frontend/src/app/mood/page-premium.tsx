@@ -2,18 +2,13 @@
 
 import { useState } from 'react';
 import { Sparkles, Loader2, ShoppingBag, ArrowRight, Wand2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { PremiumButton } from '@/design-system/components/premium-button';
+import { PremiumInput } from '@/design-system/components/premium-input';
 import { Label } from '@/components/ui/label';
 import { Layout } from '@/components/layout/Layout';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { ProductCardPremium } from '@/components/products/ProductCardPremium';
+import { EmptyState } from '@/design-system/components/loading-states';
+import { Reveal, Slide, Fade, StaggerContainer } from '@/design-system/components/motion';
 import { useCart } from '@/features/cart/useCart';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
 import { api } from '@/lib/api';
@@ -250,39 +245,32 @@ export default function MoodPagePremium() {
                   What's your budget?
                 </Label>
                 <div className="relative max-w-xs">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-lg">$</span>
-                  <Input
+                  <PremiumInput
                     type="number"
                     min="1"
                     step="0.01"
                     value={budget}
                     onChange={(e) => setBudget(e.target.value)}
                     placeholder="500"
-                    className="h-14 pl-8 text-lg rounded-xl border-border"
+                    leftIcon={<span className="text-muted-foreground">$</span>}
+                    size="lg"
                   />
                 </div>
               </div>
 
               {/* Submit Button */}
-              <Button
+              <PremiumButton
                 type="submit"
+                variant="premium"
+                size="lg"
                 disabled={isLoading || !occasion || !mood || !budget}
-                className="btn-premium h-14 px-10 rounded-full text-white w-full sm:w-auto"
+                loading={isLoading}
+                loadingText="Finding Matches..."
+                leftIcon={!isLoading && <Sparkles className="w-5 h-5" />}
+                className="w-full sm:w-auto"
               >
-                <span className="flex items-center gap-2">
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Finding Matches...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-5 h-5" />
-                      Find My Perfect Products
-                    </>
-                  )}
-                </span>
-              </Button>
+                Find My Perfect Products
+              </PremiumButton>
             </div>
           </form>
         </div>
@@ -313,15 +301,14 @@ export default function MoodPagePremium() {
                       {suggestions.length} Perfect Matches
                     </h2>
                   </div>
-                  <Button
+                  <PremiumButton
                     onClick={handleAddAllToCart}
-                    className="btn-premium h-12 px-8 rounded-full text-white"
+                    variant="premium"
+                    size="lg"
+                    leftIcon={<ShoppingBag className="w-4 h-4" />}
                   >
-                    <span className="flex items-center gap-2">
-                      <ShoppingBag className="w-4 h-4" />
-                      Add All to Bag
-                    </span>
-                  </Button>
+                    Add All to Bag
+                  </PremiumButton>
                 </div>
 
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -362,23 +349,20 @@ export default function MoodPagePremium() {
                 </div>
               </>
             ) : (
-              <div className="text-center py-20">
-                <p className="text-lg text-muted-foreground mb-6">
-                  No products found matching your criteria.
-                </p>
-                <Button
-                  onClick={() => {
+              <EmptyState
+                icon={Sparkles}
+                title="No Matches Found"
+                description="We couldn't find products matching your criteria. Try adjusting your preferences or budget."
+                action={{
+                  label: 'Try Different Preferences',
+                  onClick: () => {
                     setOccasion('');
                     setMood('');
                     setBudget('');
                     setHasSearched(false);
-                  }}
-                  variant="outline"
-                  className="rounded-full h-12 px-8"
-                >
-                  Try Different Preferences
-                </Button>
-              </div>
+                  },
+                }}
+              />
             )}
           </div>
         </section>

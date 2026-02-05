@@ -185,20 +185,50 @@ export function ProgressBar({
 // =============================================================================
 
 interface EmptyStateProps {
-  icon?: React.ReactNode;
+  icon?: React.ComponentType<{ className?: string; size?: number }> | React.ReactNode;
   title: string;
+  message?: string;
   description?: string;
-  action?: React.ReactNode;
+  action?: {
+    label: string;
+    onClick: () => void;
+  } | React.ReactNode;
   className?: string;
 }
 
 export function EmptyState({
-  icon,
+  icon: Icon,
   title,
+  message,
   description,
   action,
   className,
 }: EmptyStateProps) {
+  const descText = message || description;
+  
+  const renderIcon = () => {
+    if (!Icon) return null;
+    if (typeof Icon === 'function') {
+      return <Icon className="w-8 h-8 text-muted-foreground" />;
+    }
+    return Icon;
+  };
+  
+  const renderAction = () => {
+    if (!action) return null;
+    if (typeof action === 'object' && 'label' in action && 'onClick' in action) {
+      return (
+        <button
+          onClick={action.onClick}
+          className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all duration-300"
+        >
+          {action.label}
+        </button>
+      );
+    }
+    return action;
+  };
+
   return (
     <div
       className={cn(
@@ -206,18 +236,18 @@ export function EmptyState({
         className
       )}
     >
-      {icon && (
+      {Icon && (
         <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-6">
-          <span className="text-muted-foreground">{icon}</span>
+          {renderIcon()}
         </div>
       )}
       <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
-      {description && (
+      {descText && (
         <p className="text-sm text-muted-foreground max-w-sm mb-6">
-          {description}
+          {descText}
         </p>
       )}
-      {action}
+      {renderAction()}
     </div>
   );
 }

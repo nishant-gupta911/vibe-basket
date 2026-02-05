@@ -5,7 +5,11 @@ import { useSearchParams } from 'next/navigation';
 import { SlidersHorizontal, X, ChevronDown } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { ProductCardPremium } from '@/components/products/ProductCardPremium';
-import { Button } from '@/components/ui/button';
+import { PremiumButton } from '@/design-system/components/premium-button';
+import { PremiumCard } from '@/design-system/components/premium-card';
+import { PremiumSelect } from '@/design-system/components/premium-input';
+import { Reveal, StaggerContainer, Slide } from '@/design-system/components/motion';
+import { Skeleton, EmptyState } from '@/design-system/components/loading-states';
 import { productService, Product } from '@/features/products/productService';
 import { categories } from '@/data/categories';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
@@ -289,23 +293,21 @@ export default function ProductsPage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-20">
-              <p className="text-muted-foreground text-lg mb-6">
-                No products found matching your criteria.
-              </p>
-              <Button
-                onClick={clearFilters}
-                className="rounded-full h-12 px-8"
-              >
-                Clear Filters
-              </Button>
-            </div>
+            <EmptyState
+              icon={SlidersHorizontal}
+              title="No products found"
+              message="No products found matching your criteria."
+              action={{
+                label: 'Clear Filters',
+                onClick: clearFilters,
+              }}
+            />
           )}
 
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-center gap-2 mt-16">
-              <Button
+              <PremiumButton
                 variant="outline"
                 size="icon"
                 className="rounded-full"
@@ -313,7 +315,7 @@ export default function ProductsPage() {
                 onClick={() => setPage(page - 1)}
               >
                 <ChevronDown className="w-4 h-4 rotate-90" />
-              </Button>
+              </PremiumButton>
               <div className="flex items-center gap-1">
                 {[...Array(totalPages)].map((_, i) => (
                   <button
@@ -330,7 +332,7 @@ export default function ProductsPage() {
                   </button>
                 ))}
               </div>
-              <Button
+              <PremiumButton
                 variant="outline"
                 size="icon"
                 className="rounded-full"
@@ -338,7 +340,7 @@ export default function ProductsPage() {
                 onClick={() => setPage(page + 1)}
               >
                 <ChevronDown className="w-4 h-4 -rotate-90" />
-              </Button>
+              </PremiumButton>
             </div>
           )}
         </div>

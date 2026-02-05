@@ -21,20 +21,24 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       isAuthenticated: false,
-      isLoading: true,
-      setUser: (user) =>
+      isLoading: false,
+      setUser: (user) => {
         set({
           user,
           isAuthenticated: !!user,
           isLoading: false,
-        }),
-      setLoading: (loading) => set({ isLoading: loading }),
-      logout: () =>
+        });
+      },
+      setLoading: (loading) => {
+        set({ isLoading: loading });
+      },
+      logout: () => {
         set({
           user: null,
           isAuthenticated: false,
           isLoading: false,
-        }),
+        });
+      },
     }),
     {
       name: 'auth-storage',

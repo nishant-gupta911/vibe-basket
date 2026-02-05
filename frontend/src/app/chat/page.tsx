@@ -2,11 +2,15 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ProductCard } from '@/components/products/ProductCard';
+import { PremiumButton } from '@/design-system/components/premium-button';
+import { PremiumInput } from '@/design-system/components/premium-input';
+import { PremiumCard } from '@/design-system/components/premium-card';
+import { ProductCardPremium } from '@/components/products/ProductCardPremium';
+import { Reveal, Slide, StaggerContainer, Fade } from '@/design-system/components/motion';
+import { Spinner } from '@/design-system/components/loading-states';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -105,125 +109,144 @@ export default function ChatPage() {
 
   return (
     <div className="container mx-auto max-w-5xl h-[calc(100vh-8rem)] flex flex-col py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">AI Shopping Assistant</h1>
-        <p className="text-muted-foreground">
-          Ask me anything about products, get recommendations, or let me help you find the perfect item!
-        </p>
-      </div>
+      <Reveal>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-2">AI Shopping Assistant</h1>
+          <p className="text-muted-foreground">
+            Ask me anything about products, get recommendations, or let me help you find the perfect item!
+          </p>
+        </div>
+      </Reveal>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 bg-secondary/20 rounded-lg">
-        {messages.length === 0 && (
-          <div className="h-full flex items-center justify-center text-center text-muted-foreground">
-            <div>
-              <Bot className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium mb-2">Start a conversation</p>
-              <p className="text-sm">Try asking: &quot;Suggest a gift for a 20 year old under 1000&quot;</p>
-            </div>
-          </div>
-        )}
+      <Reveal delay={0.1}>
+        <PremiumCard variant="glass" className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 min-h-[400px]">
+          {messages.length === 0 && (
+            <Fade className="h-full flex items-center justify-center text-center text-muted-foreground">
+              <div>
+                <Bot className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-2">Start a conversation</p>
+                <p className="text-sm">Try asking: &quot;Suggest a gift for a 20 year old under 1000&quot;</p>
+              </div>
+            </Fade>
+          )}
 
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            className={`flex gap-3 ${
-              message.role === 'user' ? 'justify-end' : 'justify-start'
-            }`}
-          >
-            {message.role === 'assistant' && (
-              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+          <StaggerContainer staggerDelay={0.05}>
+            {messages.map((message, index) => (
+              <Slide
+                key={index}
+                direction={message.role === 'user' ? 'right' : 'left'}
+                className={cn(
+                  'flex gap-3',
+                  message.role === 'user' ? 'justify-end' : 'justify-start'
+                )}
+              >
+                {message.role === 'assistant' && (
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center flex-shrink-0 shadow-md">
+                    <Bot className="w-5 h-5 text-primary-foreground" />
+                  </div>
+                )}
+
+                <div
+                  className={cn(
+                    'max-w-[75%]',
+                    message.role === 'user' ? 'order-1' : 'order-2'
+                  )}
+                >
+                  <div
+                    className={cn(
+                      'rounded-2xl px-4 py-3',
+                      message.role === 'user'
+                        ? 'bg-primary text-primary-foreground rounded-tr-md'
+                        : 'bg-secondary/50 dark:bg-secondary/30 text-foreground rounded-tl-md'
+                    )}
+                  >
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                  </div>
+
+                  {/* Product Cards */}
+                  {message.products && message.products.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Here are some products you might like:
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {message.products.map((product: any) => (
+                          <ProductCardPremium
+                            key={product.id}
+                            product={{
+                              id: product.id,
+                              name: product.title,
+                              price: product.price,
+                              image: product.image || '/placeholder.png',
+                              category: product.category,
+                              description: product.description || '',
+                              stock: product.stock || 1,
+                              createdAt: product.createdAt || new Date().toISOString(),
+                              updatedAt: product.updatedAt || new Date().toISOString(),
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {message.role === 'user' && (
+                  <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0 order-2">
+                    <User className="w-5 h-5" />
+                  </div>
+                )}
+              </Slide>
+            ))}
+          </StaggerContainer>
+
+          {isLoading && (
+            <Fade className="flex gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center flex-shrink-0 shadow-md">
                 <Bot className="w-5 h-5 text-primary-foreground" />
               </div>
-            )}
-
-            <div
-              className={`max-w-[75%] ${
-                message.role === 'user' ? 'order-1' : 'order-2'
-              }`}
-            >
-              <div
-                className={`rounded-2xl px-4 py-3 ${
-                  message.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-background border'
-                }`}
-              >
-                <p className="whitespace-pre-wrap">{message.content}</p>
-              </div>
-
-              {/* Product Cards */}
-              {message.products && message.products.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Here are some products you might like:
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {message.products.map((product: any) => (
-                      <ProductCard
-                        key={product.id}
-                        product={{
-                          id: product.id,
-                          name: product.title,
-                          price: product.price,
-                          image: product.image || '/placeholder.png',
-                          category: product.category,
-                          description: product.description || '',
-                          stock: product.stock || 1,
-                          createdAt: product.createdAt || new Date().toISOString(),
-                          updatedAt: product.updatedAt || new Date().toISOString(),
-                        }}
-                      />
-                    ))}
-                  </div>
+              <div className="bg-secondary/50 dark:bg-secondary/30 rounded-2xl rounded-tl-md px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <Spinner size="sm" />
+                  <span className="text-sm text-muted-foreground">Thinking...</span>
                 </div>
-              )}
-            </div>
-
-            {message.role === 'user' && (
-              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 order-2">
-                <User className="w-5 h-5" />
               </div>
-            )}
-          </div>
-        ))}
+            </Fade>
+          )}
 
-        {isLoading && (
-          <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-              <Bot className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div className="bg-background border rounded-2xl px-4 py-3">
-              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-            </div>
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
+          <div ref={messagesEndRef} />
+        </PremiumCard>
+      </Reveal>
 
       {/* Input Area */}
-      <div className="flex gap-2">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Ask me anything about products..."
-          disabled={isLoading}
-          className="flex-1"
-        />
-        <Button
-          onClick={handleSend}
-          disabled={isLoading || !input.trim()}
-          size="icon"
-        >
-          {isLoading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <Send className="w-5 h-5" />
-          )}
-        </Button>
-      </div>
+      <Reveal delay={0.2}>
+        <div className="flex gap-3 mt-4">
+          <div className="flex-1">
+            <PremiumInput
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Ask me anything about products..."
+              disabled={isLoading}
+              className="w-full"
+            />
+          </div>
+          <PremiumButton
+            onClick={handleSend}
+            disabled={isLoading || !input.trim()}
+            variant="premium"
+            size="lg"
+            className="px-6"
+          >
+            {isLoading ? (
+              <Spinner size="sm" />
+            ) : (
+              <Send className="w-5 h-5" />
+            )}
+          </PremiumButton>
+        </div>
+      </Reveal>
     </div>
   );
 }

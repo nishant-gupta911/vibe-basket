@@ -314,22 +314,44 @@ export function useParallax(options: UseParallaxOptions = {}) {
 
 interface HoverLiftProps {
   children: React.ReactNode;
+  lift?: number | 'sm' | 'md' | 'lg';
   amount?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
-export function HoverLift({ children, amount = 'md', className }: HoverLiftProps) {
-  const amounts = {
+export function HoverLift({ children, lift, amount = 'md', className }: HoverLiftProps) {
+  // Support both lift (number) and amount (preset) props
+  const liftValue = lift ?? amount;
+  
+  const amounts: Record<string, string> = {
     sm: 'hover:-translate-y-1',
     md: 'hover:-translate-y-2',
     lg: 'hover:-translate-y-3',
   };
 
+  // If numeric lift is provided, use custom transform
+  if (typeof liftValue === 'number') {
+    return (
+      <div
+        className={cn(
+          'transition-transform duration-300 hover:-translate-y-[var(--lift)]',
+          className
+        )}
+        style={{ 
+          '--lift': `${liftValue}px`,
+          transitionTimingFunction: motionTokens.easing.easeOutExpo 
+        } as React.CSSProperties}
+      >
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
         'transition-transform duration-300',
-        amounts[amount],
+        amounts[liftValue],
         className
       )}
       style={{ transitionTimingFunction: motionTokens.easing.easeOutExpo }}
