@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { RatingStars } from '@/components/products/RatingStars';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { products } from '@/data/products';
-import { useCartStore } from '@/store/cartStore';
+import { useCart } from '@/features/cart/useCart';
+import { useAuth } from '@/features/auth/useAuth';
 import { toast } from 'sonner';
 
 interface ProductDetailPageProps {
@@ -17,7 +18,8 @@ interface ProductDetailPageProps {
 
 export default function ProductDetailPage({ id }: ProductDetailPageProps) {
   const [quantity, setQuantity] = useState(1);
-  const addItem = useCartStore((state) => state.addItem);
+  const { addToCart, isLoading } = useCart();
+  const { isAuthenticated } = useAuth();
 
   const product = products.find((p) => p.id === id);
 
@@ -42,11 +44,20 @@ export default function ProductDetailPage({ id }: ProductDetailPageProps) {
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
-  const handleAddToCart = () => {
-    for (let i = 0; i < quantity; i++) {
-      addItem(product);
+  const handleAddToCart = async () => {
+    if (!isAuthenticated) {
+      toast.error('Please log in to add items to cart');
+      return;
     }
-    toast.success(`${quantity} × ${product.name} added to cart`);
+    
+    try {
+      // The API expects productId, but our local data uses string IDs
+      // We'll call addToCart for the quantity specified
+      await addToCart(id, quantity);
+      toast.success(`${quantity} × ${product.name} added to cart`);
+    } catch {
+      toast.error('Failed to add item to cart');
+    }
   };
 
   return (

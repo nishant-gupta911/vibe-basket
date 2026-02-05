@@ -26,7 +26,8 @@ export default function CartPage() {
   const shipping = subtotal > 50 ? 0 : 9.99;
   const total = subtotal + shipping;
 
-  const handleRemoveItem = async (itemId: number, productName: string) => {
+  // FIX: Changed itemId type from number to string to match CartItem.id type
+  const handleRemoveItem = async (itemId: string, productName: string) => {
     try {
       await removeCartItem(itemId);
       toast.success(`${productName} removed from cart`);
@@ -35,7 +36,8 @@ export default function CartPage() {
     }
   };
 
-  const handleUpdateQuantity = async (itemId: number, newQuantity: number) => {
+  // FIX: Changed itemId type from number to string to match CartItem.id type
+  const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
     try {
       await updateCartItem(itemId, newQuantity);
@@ -54,23 +56,7 @@ export default function CartPage() {
     }
   };
 
-  if (!isAuthenticated) {
-    return (
-      <Layout>
-        <div className="container mx-auto px-4 py-16">
-          <div className="max-w-md mx-auto text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-4">Please Login</h1>
-            <p className="text-muted-foreground mb-6">
-              You need to be logged in to view your cart.
-            </p>
-            <Link href="/login">
-              <Button className="bg-primary hover:bg-primary/90">Login</Button>
-            </Link>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
+  // Cart now works without authentication
 
   if (isLoading) {
     return (

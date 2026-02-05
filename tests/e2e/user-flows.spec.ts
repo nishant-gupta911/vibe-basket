@@ -25,8 +25,9 @@ test.describe('E-Commerce User Flows', () => {
     // Wait for filtered results
     await page.waitForTimeout(1000);
     
-    // Should see filtered products
-    await expect(page.locator('[data-testid="product-card"]')).toHaveCount({ min: 1 });
+    // Should see filtered products - at least one product card should be visible
+    const productCount = await page.locator('[data-testid="product-card"]').count();
+    expect(productCount).toBeGreaterThanOrEqual(1);
   });
 
   test('should search for products', async ({ page }) => {
@@ -126,9 +127,9 @@ test.describe('E-Commerce User Flows', () => {
     // Submit
     await page.click('button[type="submit"]');
     
-    // Should show recommendations
-    await page.waitForTimeout(2000);
-    await expect(page.locator('[data-testid="recommendation"]')).toHaveCount({ min: 1 });
+    // Should show recommendations - at least one recommendation should be visible
+    const recommendationCount = await page.locator('[data-testid="recommendation"]').count();
+    expect(recommendationCount).toBeGreaterThanOrEqual(1);
   });
 
   test('should use AI chatbot', async ({ page }) => {
@@ -154,8 +155,9 @@ test.describe('E-Commerce User Flows', () => {
     await page.click('text=/Cart/i');
     await expect(page).toHaveURL('/cart');
     
-    // Should see cart items
-    await expect(page.locator('[data-testid="cart-item"]')).toHaveCount({ min: 1 });
+    // Should see cart items - at least one cart item should be visible
+    const cartItemCount = await page.locator('[data-testid="cart-item"]').count();
+    expect(cartItemCount).toBeGreaterThanOrEqual(1);
     
     // 3. Proceed to checkout
     await page.click('text=/Checkout/i');

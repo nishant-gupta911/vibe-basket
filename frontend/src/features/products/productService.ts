@@ -1,16 +1,8 @@
 import { api } from '@/lib/api';
+import { Product } from '@/types';
 
-export interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  category: string;
-  stock: number;
-  createdAt: string;
-  updatedAt: string;
-}
+// Re-export Product for convenience
+export type { Product } from '@/types';
 
 export interface ProductsResponse {
   products: Product[];

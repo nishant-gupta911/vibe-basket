@@ -5,7 +5,7 @@ import { ShoppingCart } from 'lucide-react';
 import { RatingStars } from './RatingStars';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/features/cart/useCart';
-import { Product } from '@/features/products/productService';
+import { Product } from '@/types';
 import { toast } from 'sonner';
 
 interface ProductCardProps {
@@ -31,7 +31,6 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className="product-card group h-full flex flex-col">
         <div className="relative overflow-hidden aspect-square bg-secondary/30">
           <img
-            src={product.image}
             src={product.image}
             alt={product.name}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
