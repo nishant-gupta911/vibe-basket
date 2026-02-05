@@ -1,7 +1,7 @@
 'use client'
 
-import { Navbar } from './Navbar';
-import { Footer } from './Footer';
+import { Navbar } from './NavbarPremium';
+import { Footer } from './FooterPremium';
 
 interface LayoutProps {
   children: React.ReactNode;
