@@ -340,6 +340,7 @@ export default function MoodPagePremium() {
                             product={{
                               id: suggestion.product.id,
                               name: suggestion.product.title,
+                              description: suggestion.reason,
                               price: suggestion.product.price,
                               image: suggestion.product.image,
                               category: suggestion.product.category,

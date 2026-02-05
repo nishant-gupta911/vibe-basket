@@ -5,7 +5,20 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { ThemeProvider } from 'next-themes'
-import { useState } from 'react'
+import { PremiumThemeProvider } from '@/design-system/theme-provider'
+import { useState, useEffect } from 'react'
+import { useAuth } from '@/features/auth/useAuth'
+
+function AuthInitializer({ children }: { children: React.ReactNode }) {
+  const { checkAuth } = useAuth();
+
+  useEffect(() => {
+    // Check auth silently on app load
+    checkAuth();
+  }, []);
+
+  return <>{children}</>;
+}
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -22,13 +35,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
         attribute="class"
         defaultTheme="system"
         enableSystem
-        disableTransitionOnChange
+        disableTransitionOnChange={false}
       >
-        <TooltipProvider>
-          {children}
-          <Toaster />
-          <Sonner />
-        </TooltipProvider>
+        <PremiumThemeProvider>
+          <TooltipProvider>
+            <AuthInitializer>
+              {children}
+            </AuthInitializer>
+            <Toaster />
+            <Sonner />
+          </TooltipProvider>
+        </PremiumThemeProvider>
       </ThemeProvider>
     </QueryClientProvider>
   )

@@ -10,6 +10,7 @@ import { useCart } from '@/features/cart/useCart';
 import { useAuth } from '@/features/auth/useAuth';
 import { categories } from '@/data/categories';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/design-system/theme-provider';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -158,6 +159,15 @@ export function Navbar() {
 
             {/* Right Actions */}
             <div className="flex items-center gap-2">
+              {/* Theme Toggle */}
+              <ThemeToggle
+                className={cn(
+                  isScrolled
+                    ? 'text-foreground/80 hover:bg-secondary'
+                    : 'text-white/80 hover:bg-white/10'
+                )}
+              />
+
               {/* Search Toggle */}
               <button
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
