@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Shopping Assistant</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Main Container -->
+  <div class="container">
+    
+    <!-- Header -->
+    <div class="header">
+      <h1>Shopping Assistant</h1>
+      <p class="subtitle">Ask me anything about our e-commerce platform</p>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="chat-container">
+      <div id="chat-messages" class="chat-messages">
+        <!-- Messages will be added here dynamically -->
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-container">
+      <textarea 
+        id="user-input" 
+        class="user-input" 
+        placeholder="Type your question here..."
+        rows="1"
+      ></textarea>
+      <button id="send-button" class="send-button">
+        Send
+      </button>
+    </div>
+
+    <!-- Footer Info -->
+    <div class="footer-info">
+      <p>This is a context-based assistant. Responses are based on predefined knowledge.</p>
+    </div>
+
+  </div>
+
+  <!-- Load Knowledge Base First -->
+  <script src="context.js"></script>
+  <!-- Then Load Main Script -->
+  <script src="script.js"></script>
+</body>
+</html>
