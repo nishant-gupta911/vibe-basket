@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpException, HttpStatus, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, HttpException, HttpStatus, BadRequestException, HttpCode } from '@nestjs/common';
 import { ChatbotService, ChatMessage } from './chatbot.service';
 import { RecommendationService, MoodRequest } from './recommendation.service';
 import { PrismaService } from '../../config/prisma.service';
@@ -15,6 +15,7 @@ export class AIController {
   }
 
   @Post('chat')
+  @HttpCode(200)
   async chat(
     @Body() body: { message: string; history?: ChatMessage[] }
   ) {
@@ -43,6 +44,7 @@ export class AIController {
   }
 
   @Post('mood')
+  @HttpCode(200)
   async getMoodRecommendations(@Body() body: MoodRequest) {
     if (!body?.occasion?.trim() || !body?.mood?.trim() || body?.budget === undefined) {
       throw new BadRequestException('Occasion, mood, and budget are required');

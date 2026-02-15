@@ -22,6 +22,7 @@ describe('Auth API Integration Tests', () => {
 
     app = moduleRef.createNestApplication();
     prisma = moduleRef.get<PrismaService>(PrismaService);
+    app.setGlobalPrefix('api');
     
     await app.init();
 
@@ -50,14 +51,15 @@ describe('Auth API Integration Tests', () => {
         })
         .expect(201);
 
-      expect(response.body).toHaveProperty('token');
-      expect(response.body).toHaveProperty('user');
-      expect(response.body.user.email).toBe('test@example.com');
-      expect(response.body.user.name).toBe('Test User');
-      expect(response.body.user).not.toHaveProperty('password');
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('accessToken');
+      expect(response.body.data).toHaveProperty('user');
+      expect(response.body.data.user.email).toBe('test@example.com');
+      expect(response.body.data.user.name).toBe('Test User');
+      expect(response.body.data.user).not.toHaveProperty('password');
 
-      authToken = response.body.token;
-      userId = response.body.user.id;
+      authToken = response.body.data.accessToken;
+      userId = response.body.data.user.id;
     });
 
     test('should reject duplicate email', async () => {
@@ -68,7 +70,7 @@ describe('Auth API Integration Tests', () => {
           email: 'test@example.com', // Same email
           password: 'Password123!',
         })
-        .expect(400);
+        .expect(409);
     });
 
     test('should reject invalid email format', async () => {
@@ -114,11 +116,12 @@ describe('Auth API Integration Tests', () => {
         })
         .expect(200);
 
-      expect(response.body).toHaveProperty('token');
-      expect(response.body).toHaveProperty('user');
-      expect(response.body.user.email).toBe('test@example.com');
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('accessToken');
+      expect(response.body.data).toHaveProperty('user');
+      expect(response.body.data.user.email).toBe('test@example.com');
 
-      authToken = response.body.token;
+      authToken = response.body.data.accessToken;
     });
 
     test('should reject incorrect password', async () => {
@@ -156,10 +159,11 @@ describe('Auth API Integration Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
-      expect(response.body).toHaveProperty('id');
-      expect(response.body).toHaveProperty('email');
-      expect(response.body).toHaveProperty('name');
-      expect(response.body).not.toHaveProperty('password');
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('id');
+      expect(response.body.data).toHaveProperty('email');
+      expect(response.body.data).toHaveProperty('name');
+      expect(response.body.data).not.toHaveProperty('password');
     });
 
     test('should reject request without token', async () => {
@@ -188,7 +192,8 @@ describe('Auth API Integration Tests', () => {
         })
         .expect(201);
 
-      const { token, user } = registerResponse.body;
+      const token = registerResponse.body.data.accessToken;
+      const user = registerResponse.body.data.user;
       expect(token).toBeDefined();
 
       // 2. Access profile with register token
@@ -206,15 +211,15 @@ describe('Auth API Integration Tests', () => {
         })
         .expect(200);
 
-      expect(loginResponse.body.token).toBeDefined();
+      expect(loginResponse.body.data.accessToken).toBeDefined();
 
       // 4. Access profile with login token
       const profileResponse = await request(app.getHttpServer())
         .get('/api/auth/profile')
-        .set('Authorization', `Bearer ${loginResponse.body.token}`)
+        .set('Authorization', `Bearer ${loginResponse.body.data.accessToken}`)
         .expect(200);
 
-      expect(profileResponse.body.email).toBe('flowtest@example.com');
+      expect(profileResponse.body.data.email).toBe('flowtest@example.com');
 
       // Cleanup
       await prisma.user.delete({ where: { id: user.id } });

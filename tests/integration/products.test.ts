@@ -20,6 +20,7 @@ describe('Products API Integration Tests', () => {
 
     app = moduleRef.createNestApplication();
     prisma = moduleRef.get<PrismaService>(PrismaService);
+    app.setGlobalPrefix('api');
     
     await app.init();
 
@@ -34,16 +35,19 @@ describe('Products API Integration Tests', () => {
     await app.close();
   });
 
+  const productsFrom = (response: any) => response.body.data.products;
+
   describe('GET /api/products', () => {
     test('should return list of products', async () => {
       const response = await request(app.getHttpServer())
         .get('/api/products')
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBeGreaterThan(0);
+      const products = productsFrom(response);
+      expect(Array.isArray(products)).toBe(true);
+      expect(products.length).toBeGreaterThan(0);
 
-      const product = response.body[0];
+      const product = products[0];
       expect(product).toHaveProperty('id');
       expect(product).toHaveProperty('title');
       expect(product).toHaveProperty('price');
@@ -56,8 +60,9 @@ describe('Products API Integration Tests', () => {
         .get('/api/products?category=electronics')
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.every((p: any) => p.category === 'electronics')).toBe(true);
+      const products = productsFrom(response);
+      expect(Array.isArray(products)).toBe(true);
+      expect(products.every((p: any) => p.category === 'electronics')).toBe(true);
     });
 
     test('should filter by multiple categories', async () => {
@@ -65,8 +70,9 @@ describe('Products API Integration Tests', () => {
         .get('/api/products?category=clothing,footwear')
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.every((p: any) => 
+      const products = productsFrom(response);
+      expect(Array.isArray(products)).toBe(true);
+      expect(products.every((p: any) => 
         ['clothing', 'footwear'].includes(p.category)
       )).toBe(true);
     });
@@ -76,8 +82,9 @@ describe('Products API Integration Tests', () => {
         .get('/api/products?minPrice=50&maxPrice=100')
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.every((p: any) => 
+      const products = productsFrom(response);
+      expect(Array.isArray(products)).toBe(true);
+      expect(products.every((p: any) => 
         p.price >= 50 && p.price <= 100
       )).toBe(true);
     });
@@ -87,8 +94,9 @@ describe('Products API Integration Tests', () => {
         .get('/api/products?tags=premium')
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.every((p: any) => 
+      const products = productsFrom(response);
+      expect(Array.isArray(products)).toBe(true);
+      expect(products.every((p: any) => 
         p.tags.includes('premium')
       )).toBe(true);
     });
@@ -98,21 +106,23 @@ describe('Products API Integration Tests', () => {
         .get('/api/products?limit=10')
         .expect(200);
 
-      expect(response.body.length).toBeLessThanOrEqual(10);
+      expect(productsFrom(response).length).toBeLessThanOrEqual(10);
     });
 
     test('should paginate results', async () => {
       const page1 = await request(app.getHttpServer())
-        .get('/api/products?limit=5&skip=0')
+        .get('/api/products?limit=5&page=1')
         .expect(200);
 
       const page2 = await request(app.getHttpServer())
-        .get('/api/products?limit=5&skip=5')
+        .get('/api/products?limit=5&page=2')
         .expect(200);
 
-      expect(page1.body.length).toBe(5);
-      expect(page2.body.length).toBe(5);
-      expect(page1.body[0].id).not.toBe(page2.body[0].id);
+      const p1 = productsFrom(page1);
+      const p2 = productsFrom(page2);
+      expect(p1.length).toBe(5);
+      expect(p2.length).toBe(5);
+      expect(p1[0].id).not.toBe(p2[0].id);
     });
   });
 
@@ -129,10 +139,10 @@ describe('Products API Integration Tests', () => {
         .get(`/api/products/${testProductId}`)
         .expect(200);
 
-      expect(response.body).toHaveProperty('id', testProductId);
-      expect(response.body).toHaveProperty('title');
-      expect(response.body).toHaveProperty('description');
-      expect(response.body).toHaveProperty('price');
+      expect(response.body.data).toHaveProperty('id', testProductId);
+      expect(response.body.data).toHaveProperty('title');
+      expect(response.body.data).toHaveProperty('description');
+      expect(response.body.data).toHaveProperty('price');
     });
 
     test('should return 404 for non-existent product', async () => {
@@ -148,11 +158,11 @@ describe('Products API Integration Tests', () => {
         .get('/api/products/categories')
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBeGreaterThan(0);
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data.length).toBeGreaterThan(0);
       
       // Should include common categories
-      const categories = response.body.map((c: any) => c.category || c);
+      const categories = response.body.data.map((c: any) => c.name || c.category || c);
       expect(categories).toContain('clothing');
       expect(categories).toContain('electronics');
     });
@@ -164,8 +174,9 @@ describe('Products API Integration Tests', () => {
         .get('/api/products?search=laptop')
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.some((p: any) => 
+      const products = productsFrom(response);
+      expect(Array.isArray(products)).toBe(true);
+      expect(products.some((p: any) => 
         p.title.toLowerCase().includes('laptop')
       )).toBe(true);
     });
@@ -175,9 +186,10 @@ describe('Products API Integration Tests', () => {
         .get('/api/products?search=premium')
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      if (response.body.length > 0) {
-        expect(response.body.some((p: any) => 
+      const products = productsFrom(response);
+      expect(Array.isArray(products)).toBe(true);
+      if (products.length > 0) {
+        expect(products.some((p: any) => 
           p.description?.toLowerCase().includes('premium') || 
           p.tags.includes('premium')
         )).toBe(true);
@@ -189,7 +201,7 @@ describe('Products API Integration Tests', () => {
         .get('/api/products?search=zzznonexistentkeywordzzz')
         .expect(200);
 
-      expect(response.body).toEqual([]);
+      expect(productsFrom(response)).toEqual([]);
     });
   });
 
@@ -199,8 +211,9 @@ describe('Products API Integration Tests', () => {
         .get('/api/products?category=clothing&minPrice=20&maxPrice=100')
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.every((p: any) => 
+      const products = productsFrom(response);
+      expect(Array.isArray(products)).toBe(true);
+      expect(products.every((p: any) => 
         p.category === 'clothing' && p.price >= 20 && p.price <= 100
       )).toBe(true);
     });
@@ -210,9 +223,10 @@ describe('Products API Integration Tests', () => {
         .get('/api/products?search=shirt&category=clothing&maxPrice=50')
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      if (response.body.length > 0) {
-        expect(response.body.every((p: any) => 
+      const products = productsFrom(response);
+      expect(Array.isArray(products)).toBe(true);
+      if (products.length > 0) {
+        expect(products.every((p: any) => 
           p.category === 'clothing' && p.price <= 50
         )).toBe(true);
       }
@@ -225,7 +239,7 @@ describe('Products API Integration Tests', () => {
         .get('/api/products')
         .expect(200);
 
-      expect(response.body.every((p: any) => p.inStock === true)).toBe(true);
+      expect(productsFrom(response).every((p: any) => p.inStock === true)).toBe(true);
     });
 
     test('should include stock information', async () => {
@@ -233,8 +247,8 @@ describe('Products API Integration Tests', () => {
         .get('/api/products')
         .expect(200);
 
-      expect(response.body[0]).toHaveProperty('stock');
-      expect(typeof response.body[0].stock).toBe('number');
+      expect(productsFrom(response)[0]).toHaveProperty('stock');
+      expect(typeof productsFrom(response)[0].stock).toBe('number');
     });
   });
 });
