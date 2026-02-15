@@ -65,7 +65,7 @@ export default function ProductsPage() {
       });
 
       setProducts(response.data.products);
-      setTotalPages(response.data.totalPages);
+      setTotalPages(response.data.pagination?.totalPages || 1);
     } catch (error: any) {
       toast.error('Failed to fetch products');
       console.error(error);

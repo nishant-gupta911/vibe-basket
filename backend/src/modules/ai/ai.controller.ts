@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, HttpException, HttpStatus, BadRequestException } from '@nestjs/common';
 import { ChatbotService, ChatMessage } from './chatbot.service';
 import { RecommendationService, MoodRequest } from './recommendation.service';
 import { PrismaService } from '../../config/prisma.service';
@@ -18,16 +18,12 @@ export class AIController {
   async chat(
     @Body() body: { message: string; history?: ChatMessage[] }
   ) {
-    if (!body.message) {
-      return {
-        success: false,
-        data: null,
-        message: 'Message is required'
-      };
+    if (!body?.message?.trim()) {
+      throw new BadRequestException('Message is required');
     }
 
     try {
-      const response = await this.chatbotService.chat(body.message, body.history);
+      const response = await this.chatbotService.chat(body.message, body.history || []);
       return {
         success: true,
         data: response,
@@ -37,7 +33,10 @@ export class AIController {
       console.error('Chat error:', error);
       return {
         success: false,
-        data: null,
+        data: {
+          reply: "I'm having trouble right now. Please try again in a moment.",
+          productIds: null,
+        },
         message: error.message || 'Failed to process chat message'
       };
     }
@@ -45,20 +44,12 @@ export class AIController {
 
   @Post('mood')
   async getMoodRecommendations(@Body() body: MoodRequest) {
-    if (!body.occasion || !body.mood || !body.budget) {
-      return {
-        success: false,
-        data: null,
-        message: 'Occasion, mood, and budget are required'
-      };
+    if (!body?.occasion?.trim() || !body?.mood?.trim() || body?.budget === undefined) {
+      throw new BadRequestException('Occasion, mood, and budget are required');
     }
 
     if (body.budget <= 0) {
-      return {
-        success: false,
-        data: null,
-        message: 'Budget must be greater than 0'
-      };
+      throw new BadRequestException('Budget must be greater than 0');
     }
 
     try {
@@ -72,7 +63,7 @@ export class AIController {
       console.error('Mood recommendation error:', error);
       return {
         success: false,
-        data: null,
+        data: { suggestions: [] },
         message: error.message || 'Failed to generate recommendations'
       };
     }
@@ -98,6 +89,7 @@ export class AIController {
       }
 
       let embedded = 0;
+      let vectorColumnAvailable = true;
 
       // Process in batches to avoid rate limits
       const batchSize = 10;
@@ -115,11 +107,17 @@ export class AIController {
           const product = batch[j];
           const embedding = embeddings[j].embedding;
 
-          await this.prisma.$executeRaw`
-            UPDATE "Product"
-            SET embedding = ${JSON.stringify(embedding)}::vector
-            WHERE id = ${product.id}
-          `;
+          if (vectorColumnAvailable) {
+            try {
+              await this.prisma.$executeRaw`
+                UPDATE "Product"
+                SET embedding = ${JSON.stringify(embedding)}::vector
+                WHERE id = ${product.id}
+              `;
+            } catch {
+              vectorColumnAvailable = false;
+            }
+          }
 
           embedded++;
         }
@@ -131,7 +129,9 @@ export class AIController {
       }
 
       return {
-        message: 'Products embedded successfully',
+        message: vectorColumnAvailable
+          ? 'Products embedded successfully'
+          : 'Products processed, but embedding column is not available in schema',
         embedded,
         total: products.length,
       };

@@ -19,6 +19,10 @@ export function ProductCardPremium({ product, variant = 'default' }: ProductCard
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const safeName = product.name || 'Untitled Product';
+  const safeImage = product.image || '/placeholder.svg';
+  const safeCategory = product.category || 'uncategorized';
+  const safePrice = Number.isFinite(product.price) ? product.price : 0;
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -26,7 +30,7 @@ export function ProductCardPremium({ product, variant = 'default' }: ProductCard
     try {
       await addToCart(product.id, 1);
       toast.success(`Added to bag`, {
-        description: product.name,
+        description: safeName,
       });
     } catch (error: any) {
       toast.error(error.message || 'Unable to add to cart');
@@ -60,8 +64,8 @@ export function ProductCardPremium({ product, variant = 'default' }: ProductCard
             )}
             
             <img
-              src={product.image}
-              alt={product.name}
+              src={safeImage}
+              alt={safeName}
               className={cn(
                 'w-full h-full object-cover transition-all duration-700 ease-out-expo',
                 isHovered && 'scale-105',
@@ -140,14 +144,14 @@ export function ProductCardPremium({ product, variant = 'default' }: ProductCard
           {/* Content */}
           <div className="p-5">
             <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
-              {product.category}
+              {safeCategory}
             </p>
             <h3 className="font-medium text-foreground text-lg leading-snug mb-3 line-clamp-2 group-hover:text-primary transition-colors duration-300">
-              {product.name}
+              {safeName}
             </h3>
             <div className="flex items-baseline gap-2">
               <span className="text-xl font-semibold text-foreground">
-                ${product.price.toFixed(2)}
+                ${safePrice.toFixed(2)}
               </span>
               {product.originalPrice && (
                 <span className="text-sm text-muted-foreground line-through">
@@ -177,8 +181,8 @@ export function ProductCardPremium({ product, variant = 'default' }: ProductCard
           )}
 
           <img
-            src={product.image}
-            alt={product.name}
+            src={safeImage}
+            alt={safeName}
             className={cn(
               'w-full h-full object-cover transition-all duration-700 ease-out-expo',
               isHovered && 'scale-105',
@@ -252,14 +256,14 @@ export function ProductCardPremium({ product, variant = 'default' }: ProductCard
         {/* Content */}
         <div className="p-4">
           <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1.5">
-            {product.category}
+            {safeCategory}
           </p>
           <h3 className="font-medium text-foreground leading-snug mb-2 line-clamp-2 group-hover:text-primary transition-colors duration-300">
-            {product.name}
+            {safeName}
           </h3>
           <div className="flex items-baseline gap-2">
             <span className="text-lg font-semibold text-foreground">
-              ${product.price.toFixed(2)}
+              ${safePrice.toFixed(2)}
             </span>
             {product.originalPrice && (
               <span className="text-sm text-muted-foreground line-through">

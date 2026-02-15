@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
 import { Send, Bot, User, Sparkles, ShoppingBag } from 'lucide-react';
 import { PremiumButton } from '@/design-system/components/premium-button';
 import { PremiumInput } from '@/design-system/components/premium-input';
@@ -10,6 +9,7 @@ import { PremiumCard } from '@/design-system/components/premium-card';
 import { Fade, Slide, Scale, StaggerContainer, Reveal, HoverLift } from '@/design-system/components/motion';
 import { Spinner, ErrorState } from '@/design-system/components/loading-states';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -57,22 +57,11 @@ export default function ChatbotPage() {
     setMessages(newMessages);
 
     try {
-      const token = localStorage.getItem('accessToken');
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-
       const history = messages.map((m) => ({ role: m.role, content: m.content }));
-
-      const response = await axios.post(
-        'http://localhost:4000/api/ai/chat',
-        {
-          message: userMessage,
-          history,
-        },
-        { headers }
-      );
+      const response = await api.post<{ reply: string; productIds?: string[] }>('/ai/chat', {
+        message: userMessage,
+        history,
+      });
 
       setMessages([
         ...newMessages,

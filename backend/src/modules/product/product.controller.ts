@@ -11,6 +11,11 @@ export class ProductController {
     return this.productService.getProducts(query);
   }
 
+  @Get('search')
+  searchProducts(@Query() query: QueryProductDto) {
+    return this.productService.getProducts(query);
+  }
+
   @Get('categories')
   getCategories() {
     return this.productService.getCategories();

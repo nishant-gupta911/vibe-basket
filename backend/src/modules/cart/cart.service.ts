@@ -51,7 +51,7 @@ export class CartService {
       throw new NotFoundException('Product not found');
     }
 
-    if (!product.inStock) {
+    if (!product.inStock || product.stock <= 0) {
       throw new BadRequestException('Product out of stock');
     }
 
@@ -72,10 +72,15 @@ export class CartService {
       },
     });
 
+    const requestedQuantity = existingItem ? existingItem.quantity + dto.quantity : dto.quantity;
+    if (requestedQuantity > product.stock) {
+      throw new BadRequestException(`Only ${product.stock} item(s) available`);
+    }
+
     if (existingItem) {
       await this.prisma.cartItem.update({
         where: { id: existingItem.id },
-        data: { quantity: existingItem.quantity + dto.quantity },
+        data: { quantity: requestedQuantity },
       });
     } else {
       await this.prisma.cartItem.create({
@@ -99,13 +104,33 @@ export class CartService {
       throw new NotFoundException('Cart not found');
     }
 
+    const cartItem = await this.prisma.cartItem.findFirst({
+      where: { id: itemId, cartId: cart.id },
+    });
+
+    if (!cartItem) {
+      throw new NotFoundException('Cart item not found');
+    }
+
     if (dto.quantity === 0) {
       await this.prisma.cartItem.delete({
-        where: { id: itemId },
+        where: { id: cartItem.id },
       });
     } else {
+      const product = await this.prisma.product.findUnique({
+        where: { id: cartItem.productId },
+      });
+
+      if (!product || !product.inStock || product.stock <= 0) {
+        throw new BadRequestException('Product is unavailable');
+      }
+
+      if (dto.quantity > product.stock) {
+        throw new BadRequestException(`Only ${product.stock} item(s) available`);
+      }
+
       await this.prisma.cartItem.update({
-        where: { id: itemId },
+        where: { id: cartItem.id },
         data: { quantity: dto.quantity },
       });
     }
@@ -122,9 +147,15 @@ export class CartService {
       throw new NotFoundException('Cart not found');
     }
 
-    await this.prisma.cartItem.delete({
-      where: { id: itemId },
+    const cartItem = await this.prisma.cartItem.findFirst({
+      where: { id: itemId, cartId: cart.id },
     });
+
+    if (!cartItem) {
+      throw new NotFoundException('Cart item not found');
+    }
+
+    await this.prisma.cartItem.delete({ where: { id: cartItem.id } });
 
     return this.getCart(userId);
   }
