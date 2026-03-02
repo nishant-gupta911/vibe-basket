@@ -29,7 +29,7 @@ describe('AI API Integration Tests', () => {
 
   describe('POST /api/ai/chat', () => {
     test('should respond to greeting', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpAdapter().getInstance())
         .post('/api/ai/chat')
         .send({
           message: 'Hello',
@@ -42,7 +42,7 @@ describe('AI API Integration Tests', () => {
     });
 
     test('should handle product search queries', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpAdapter().getInstance())
         .post('/api/ai/chat')
         .send({
           message: 'Show me laptops under $1000',
@@ -56,7 +56,7 @@ describe('AI API Integration Tests', () => {
     });
 
     test('should handle budget queries', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpAdapter().getInstance())
         .post('/api/ai/chat')
         .send({
           message: 'I need something under $50',
@@ -69,7 +69,7 @@ describe('AI API Integration Tests', () => {
     });
 
     test('should handle category queries', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpAdapter().getInstance())
         .post('/api/ai/chat')
         .send({
           message: 'Show me clothing',
@@ -82,7 +82,7 @@ describe('AI API Integration Tests', () => {
     });
 
     test('should handle style advice queries', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpAdapter().getInstance())
         .post('/api/ai/chat')
         .send({
           message: 'What should I wear to office?',
@@ -95,7 +95,7 @@ describe('AI API Integration Tests', () => {
     });
 
     test('should reject off-topic queries politely', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpAdapter().getInstance())
         .post('/api/ai/chat')
         .send({
           message: 'What is the weather today?',
@@ -108,7 +108,7 @@ describe('AI API Integration Tests', () => {
     });
 
     test('should reject empty message', async () => {
-      await request(app.getHttpServer())
+      await request(app.getHttpAdapter().getInstance())
         .post('/api/ai/chat')
         .send({
           message: '',
@@ -117,7 +117,7 @@ describe('AI API Integration Tests', () => {
     });
 
     test('should handle missing message field', async () => {
-      await request(app.getHttpServer())
+      await request(app.getHttpAdapter().getInstance())
         .post('/api/ai/chat')
         .send({})
         .expect(400);
@@ -126,7 +126,7 @@ describe('AI API Integration Tests', () => {
 
   describe('POST /api/ai/mood', () => {
     test('should return recommendations for romantic anniversary', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpAdapter().getInstance())
         .post('/api/ai/mood')
         .send({
           mood: 'Romantic',
@@ -146,7 +146,7 @@ describe('AI API Integration Tests', () => {
     });
 
     test('should return recommendations for sporty gym', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpAdapter().getInstance())
         .post('/api/ai/mood')
         .send({
           mood: 'Sporty',
@@ -160,7 +160,7 @@ describe('AI API Integration Tests', () => {
     });
 
     test('should respect budget constraint', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpAdapter().getInstance())
         .post('/api/ai/mood')
         .send({
           mood: 'Casual',
@@ -174,7 +174,7 @@ describe('AI API Integration Tests', () => {
     });
 
     test('should handle high budget', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpAdapter().getInstance())
         .post('/api/ai/mood')
         .send({
           mood: 'Professional',
@@ -187,7 +187,7 @@ describe('AI API Integration Tests', () => {
     });
 
     test('should reject missing mood', async () => {
-      await request(app.getHttpServer())
+      await request(app.getHttpAdapter().getInstance())
         .post('/api/ai/mood')
         .send({
           occasion: 'Party',
@@ -197,7 +197,7 @@ describe('AI API Integration Tests', () => {
     });
 
     test('should reject missing occasion', async () => {
-      await request(app.getHttpServer())
+      await request(app.getHttpAdapter().getInstance())
         .post('/api/ai/mood')
         .send({
           mood: 'Happy',
@@ -207,7 +207,7 @@ describe('AI API Integration Tests', () => {
     });
 
     test('should reject invalid budget', async () => {
-      await request(app.getHttpServer())
+      await request(app.getHttpAdapter().getInstance())
         .post('/api/ai/mood')
         .send({
           mood: 'Happy',
@@ -218,7 +218,7 @@ describe('AI API Integration Tests', () => {
     });
 
     test('should reject zero budget', async () => {
-      await request(app.getHttpServer())
+      await request(app.getHttpAdapter().getInstance())
         .post('/api/ai/mood')
         .send({
           mood: 'Casual',
@@ -231,7 +231,7 @@ describe('AI API Integration Tests', () => {
 
   describe('AI - Mood Finder Tags', () => {
     test('should avoid casual items for elegant occasions', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpAdapter().getInstance())
         .post('/api/ai/mood')
         .send({
           mood: 'Elegant',
@@ -249,7 +249,7 @@ describe('AI API Integration Tests', () => {
     });
 
     test('should provide personalized explanations', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpAdapter().getInstance())
         .post('/api/ai/mood')
         .send({
           mood: 'Romantic',

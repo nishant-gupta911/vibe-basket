@@ -42,7 +42,7 @@ describe('Auth API Integration Tests', () => {
 
   describe('POST /api/auth/register', () => {
     test('should register a new user successfully', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpAdapter().getInstance())
         .post('/api/auth/register')
         .send({
           name: 'Test User',
@@ -63,7 +63,7 @@ describe('Auth API Integration Tests', () => {
     });
 
     test('should reject duplicate email', async () => {
-      await request(app.getHttpServer())
+      await request(app.getHttpAdapter().getInstance())
         .post('/api/auth/register')
         .send({
           name: 'Test User 2',
@@ -74,7 +74,7 @@ describe('Auth API Integration Tests', () => {
     });
 
     test('should reject invalid email format', async () => {
-      await request(app.getHttpServer())
+      await request(app.getHttpAdapter().getInstance())
         .post('/api/auth/register')
         .send({
           name: 'Test User',
@@ -85,7 +85,7 @@ describe('Auth API Integration Tests', () => {
     });
 
     test('should reject weak password', async () => {
-      await request(app.getHttpServer())
+      await request(app.getHttpAdapter().getInstance())
         .post('/api/auth/register')
         .send({
           name: 'Test User',
@@ -96,7 +96,7 @@ describe('Auth API Integration Tests', () => {
     });
 
     test('should reject missing fields', async () => {
-      await request(app.getHttpServer())
+      await request(app.getHttpAdapter().getInstance())
         .post('/api/auth/register')
         .send({
           name: 'Test User',
@@ -108,7 +108,7 @@ describe('Auth API Integration Tests', () => {
 
   describe('POST /api/auth/login', () => {
     test('should login with correct credentials', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpAdapter().getInstance())
         .post('/api/auth/login')
         .send({
           email: 'test@example.com',
@@ -125,7 +125,7 @@ describe('Auth API Integration Tests', () => {
     });
 
     test('should reject incorrect password', async () => {
-      await request(app.getHttpServer())
+      await request(app.getHttpAdapter().getInstance())
         .post('/api/auth/login')
         .send({
           email: 'test@example.com',
@@ -135,7 +135,7 @@ describe('Auth API Integration Tests', () => {
     });
 
     test('should reject non-existent email', async () => {
-      await request(app.getHttpServer())
+      await request(app.getHttpAdapter().getInstance())
         .post('/api/auth/login')
         .send({
           email: 'nonexistent@example.com',
@@ -145,7 +145,7 @@ describe('Auth API Integration Tests', () => {
     });
 
     test('should reject missing credentials', async () => {
-      await request(app.getHttpServer())
+      await request(app.getHttpAdapter().getInstance())
         .post('/api/auth/login')
         .send({})
         .expect(400);
@@ -154,7 +154,7 @@ describe('Auth API Integration Tests', () => {
 
   describe('GET /api/auth/profile', () => {
     test('should get user profile with valid token', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpAdapter().getInstance())
         .get('/api/auth/profile')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
@@ -167,13 +167,13 @@ describe('Auth API Integration Tests', () => {
     });
 
     test('should reject request without token', async () => {
-      await request(app.getHttpServer())
+      await request(app.getHttpAdapter().getInstance())
         .get('/api/auth/profile')
         .expect(401);
     });
 
     test('should reject invalid token', async () => {
-      await request(app.getHttpServer())
+      await request(app.getHttpAdapter().getInstance())
         .get('/api/auth/profile')
         .set('Authorization', 'Bearer invalid-token')
         .expect(401);
@@ -183,7 +183,7 @@ describe('Auth API Integration Tests', () => {
   describe('Auth Flow - Complete Journey', () => {
     test('should complete full auth flow: register → login → profile', async () => {
       // 1. Register
-      const registerResponse = await request(app.getHttpServer())
+      const registerResponse = await request(app.getHttpAdapter().getInstance())
         .post('/api/auth/register')
         .send({
           name: 'Flow Test User',
@@ -197,13 +197,13 @@ describe('Auth API Integration Tests', () => {
       expect(token).toBeDefined();
 
       // 2. Access profile with register token
-      await request(app.getHttpServer())
+      await request(app.getHttpAdapter().getInstance())
         .get('/api/auth/profile')
         .set('Authorization', `Bearer ${token}`)
         .expect(200);
 
       // 3. Login again
-      const loginResponse = await request(app.getHttpServer())
+      const loginResponse = await request(app.getHttpAdapter().getInstance())
         .post('/api/auth/login')
         .send({
           email: 'flowtest@example.com',
@@ -214,7 +214,7 @@ describe('Auth API Integration Tests', () => {
       expect(loginResponse.body.data.accessToken).toBeDefined();
 
       // 4. Access profile with login token
-      const profileResponse = await request(app.getHttpServer())
+      const profileResponse = await request(app.getHttpAdapter().getInstance())
         .get('/api/auth/profile')
         .set('Authorization', `Bearer ${loginResponse.body.data.accessToken}`)
         .expect(200);
