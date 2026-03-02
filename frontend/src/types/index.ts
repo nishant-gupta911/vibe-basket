@@ -34,3 +34,14 @@ export interface User {
   email: string;
   avatar?: string;
 }
+
+export interface Notification {
+  id: string;
+  userId?: string | null;
+  sessionId?: string | null;
+  type: string;
+  message: string;
+  meta?: Record<string, any> | null;
+  read: boolean;
+  createdAt: string;
+}

@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, ShoppingCart, User, Menu, X, ChevronDown } from 'lucide-react';
+import { Search, ShoppingCart, User, Menu, X, ChevronDown, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCart } from '@/features/cart/useCart';
 import { useAuth } from '@/features/auth/useAuth';
 import { productService } from '@/features/products/productService';
+import { notificationService } from '@/features/notifications/notificationService';
+import { Notification } from '@/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +27,7 @@ export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [categories, setCategories] = useState<NavCategory[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const router = useRouter();
 
   const { getCartItemCount, fetchCart } = useCart();
@@ -50,6 +53,33 @@ export function Navbar() {
 
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchNotifications = async () => {
+      try {
+        const response = await notificationService.getNotifications({ unread: true, limit: 5 });
+        if (isMounted) {
+          setNotifications(response.data || []);
+        }
+      } catch {
+        if (isMounted) {
+          setNotifications([]);
+        }
+      }
+    };
+
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 10_000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  const unreadCount = notifications.filter((notification) => !notification.read).length;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,6 +151,43 @@ export function Navbar() {
               <Button variant="ghost">Mood Finder</Button>
             </Link>
 
+            <DropdownMenu
+              onOpenChange={(open) => {
+                if (open && notifications.length > 0) {
+                  const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
+                  if (unreadIds.length > 0) {
+                    notificationService.markRead(unreadIds).catch(() => undefined);
+                    setNotifications((prev) => prev.map((item) => ({ ...item, read: true })));
+                  }
+                }
+              }}
+            >
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell size={18} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-72 bg-popover">
+                {notifications.length === 0 ? (
+                  <div className="px-3 py-2 text-sm text-muted-foreground">No new notifications</div>
+                ) : (
+                  notifications.map((notification) => (
+                    <DropdownMenuItem key={notification.id} className="flex flex-col items-start gap-1">
+                      <span className="text-sm text-foreground">{notification.message}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(notification.createdAt).toLocaleString()}
+                      </span>
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Link href="/cart" className="relative">
               <Button variant="ghost" size="icon">
                 <ShoppingCart size={20} />
@@ -159,6 +226,43 @@ export function Navbar() {
           </nav>
 
           <div className="flex items-center gap-2 md:hidden">
+            <DropdownMenu
+              onOpenChange={(open) => {
+                if (open && notifications.length > 0) {
+                  const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
+                  if (unreadIds.length > 0) {
+                    notificationService.markRead(unreadIds).catch(() => undefined);
+                    setNotifications((prev) => prev.map((item) => ({ ...item, read: true })));
+                  }
+                }
+              }}
+            >
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell size={18} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-72 bg-popover">
+                {notifications.length === 0 ? (
+                  <div className="px-3 py-2 text-sm text-muted-foreground">No new notifications</div>
+                ) : (
+                  notifications.map((notification) => (
+                    <DropdownMenuItem key={notification.id} className="flex flex-col items-start gap-1">
+                      <span className="text-sm text-foreground">{notification.message}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(notification.createdAt).toLocaleString()}
+                      </span>
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Link href="/cart" className="relative">
               <Button variant="ghost" size="icon">
                 <ShoppingCart size={20} />

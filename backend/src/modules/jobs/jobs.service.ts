@@ -3,6 +3,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { RecommendationService } from '../recommendation/recommendation.service';
 import { CacheService } from '../../common/cache/cache.service';
 import { logger } from '../../common/utils/logger';
+import { NotificationsService } from '../notifications/notifications.service';
 
 type JobInterval = NodeJS.Timeout;
 
@@ -11,12 +12,14 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   private behaviorInterval: JobInterval | null = null;
   private recommendationInterval: JobInterval | null = null;
   private trendingInterval: JobInterval | null = null;
+  private notificationInterval: JobInterval | null = null;
   private lastBehaviorAggregationAt: Date | null = null;
 
   constructor(
     private prisma: PrismaService,
     private recommendations: RecommendationService,
     private cache: CacheService,
+    private notifications: NotificationsService,
   ) {}
 
   onModuleInit() {
@@ -28,6 +31,9 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     );
     this.runTrendingWarmup().catch((error) =>
       logger.log('error', 'Trending warmup failed', { error: String(error) }),
+    );
+    this.runNotificationSimulation().catch((error) =>
+      logger.log('error', 'Notification simulation failed', { error: String(error) }),
     );
 
     this.behaviorInterval = setInterval(() => {
@@ -47,12 +53,19 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
         logger.log('error', 'Trending warmup failed', { error: String(error) }),
       );
     }, 2 * 60_000);
+
+    this.notificationInterval = setInterval(() => {
+      this.runNotificationSimulation().catch((error) =>
+        logger.log('error', 'Notification simulation failed', { error: String(error) }),
+      );
+    }, 10 * 60_000);
   }
 
   onModuleDestroy() {
     if (this.behaviorInterval) clearInterval(this.behaviorInterval);
     if (this.recommendationInterval) clearInterval(this.recommendationInterval);
     if (this.trendingInterval) clearInterval(this.trendingInterval);
+    if (this.notificationInterval) clearInterval(this.notificationInterval);
   }
 
   private async runBehaviorAggregation() {
@@ -117,5 +130,41 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   private async runTrendingWarmup() {
     await this.recommendations.getTrendingProducts(6);
     logger.log('info', 'Trending cache warmed');
+  }
+
+  private async runNotificationSimulation() {
+    const wishlists = await this.prisma.wishlist.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        userId: true,
+        product: { select: { id: true, title: true, price: true, inStock: true } },
+      },
+    });
+
+    for (const wishlist of wishlists) {
+      const product = wishlist.product;
+      await this.notifications.createNotification(
+        wishlist.userId,
+        null,
+        'wishlist_price_drop',
+        `Price drop on ${product.title}`,
+        { productId: product.id, price: product.price },
+      );
+
+      if (product.inStock) {
+        await this.notifications.createNotification(
+          wishlist.userId,
+          null,
+          'restock',
+          `${product.title} is back in stock`,
+          { productId: product.id },
+        );
+      }
+    }
+
+    if (wishlists.length > 0) {
+      logger.log('info', 'Notification simulation completed', { count: wishlists.length });
+    }
   }
 }

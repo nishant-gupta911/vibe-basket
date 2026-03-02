@@ -19,6 +19,7 @@ model User {
   wishlists Wishlist[]
   reviews   Review[]
   events    AnalyticsEvent[]
+  notifications Notification[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -114,5 +115,23 @@ model AnalyticsEvent {
 
   @@index([event])
   @@index([sessionId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String?
+  sessionId String?
+  type      String
+  message   String
+  meta      Json?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([read])
   @@index([createdAt])
 }

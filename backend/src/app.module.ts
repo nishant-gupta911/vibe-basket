@@ -15,6 +15,7 @@ import { AIModule } from './modules/ai/ai.module';
 import { PrismaService } from './config/prisma.service';
 import { JobsModule } from './modules/jobs/jobs.module';
 import { CacheModule } from './common/cache/cache.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { CacheModule } from './common/cache/cache.module';
     AnalyticsModule,
     PersonalizationModule,
     RecommendationModule,
+    NotificationsModule,
     CartModule,
     OrderModule,
     AIModule,
