@@ -56,4 +56,28 @@ export class VendorsController {
   analytics(@Request() req) {
     return this.vendorsService.getVendorAnalytics(req.user.userId);
   }
+
+  @Post(':id/approve')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  approveVendor(@Param('id') id: string) {
+    return this.vendorsService.approveVendor(id);
+  }
+
+  @Post(':id/suspend')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  suspendVendor(@Param('id') id: string) {
+    return this.vendorsService.suspendVendor(id);
+  }
+
+  @Post(':id/deactivate-products')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  deactivateProducts(@Param('id') id: string) {
+    return this.vendorsService.deactivateVendorProducts(id);
+  }
+
+  @Get(':id/metrics')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  vendorMetrics(@Param('id') id: string) {
+    return this.vendorsService.getVendorMetrics(id);
+  }
 }

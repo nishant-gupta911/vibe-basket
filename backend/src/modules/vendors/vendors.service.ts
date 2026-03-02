@@ -229,4 +229,53 @@ export class VendorsService {
       message: 'Vendor analytics',
     };
   }
+
+  async approveVendor(vendorId: string) {
+    const vendor = await this.prisma.vendor.update({
+      where: { id: vendorId },
+      data: { status: 'APPROVED' },
+    });
+    return { success: true, data: vendor, message: 'Vendor approved' };
+  }
+
+  async suspendVendor(vendorId: string) {
+    const vendor = await this.prisma.vendor.update({
+      where: { id: vendorId },
+      data: { status: 'SUSPENDED' },
+    });
+    return { success: true, data: vendor, message: 'Vendor suspended' };
+  }
+
+  async deactivateVendorProducts(vendorId: string) {
+    const result = await this.prisma.product.updateMany({
+      where: { vendorId },
+      data: { inStock: false, stock: 0 },
+    });
+    return { success: true, data: { count: result.count }, message: 'Vendor products deactivated' };
+  }
+
+  async getVendorMetrics(vendorId: string) {
+    const commissions = await this.prisma.orderCommission.aggregate({
+      _sum: { vendorAmount: true, commissionAmount: true },
+      _count: { _all: true },
+      where: { vendorId },
+    });
+
+    const payouts = await this.prisma.vendorPayout.aggregate({
+      _sum: { amount: true },
+      _count: { _all: true },
+      where: { vendorId, status: 'PAID' },
+    });
+
+    return {
+      success: true,
+      data: {
+        totalOrders: commissions._count._all,
+        totalEarnings: commissions._sum.vendorAmount || 0,
+        totalCommission: commissions._sum.commissionAmount || 0,
+        totalPaidOut: payouts._sum.amount || 0,
+      },
+      message: 'Vendor metrics',
+    };
+  }
 }
