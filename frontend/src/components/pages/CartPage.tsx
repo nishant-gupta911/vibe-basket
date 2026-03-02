@@ -224,7 +224,7 @@ export default function CartPage() {
                 </PremiumButton>
 
                 <p className="text-xs text-muted-foreground text-center mt-4">
-                  Secure checkout powered by Stripe
+                  Secure checkout powered by Razorpay
                 </p>
               </PremiumCard>
             </Reveal>

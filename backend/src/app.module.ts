@@ -17,6 +17,7 @@ import { JobsModule } from './modules/jobs/jobs.module';
 import { CacheModule } from './common/cache/cache.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { MetricsModule } from './common/metrics/metrics.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { MetricsModule } from './common/metrics/metrics.module';
     PersonalizationModule,
     RecommendationModule,
     NotificationsModule,
+    PaymentsModule,
     CartModule,
     OrderModule,
     AIModule,

@@ -16,6 +16,7 @@ model User {
   role      String   @default("user")
   cart      Cart?
   orders    Order[]
+  payments  Payment[]
   wishlists Wishlist[]
   reviews   Review[]
   events    AnalyticsEvent[]
@@ -70,14 +71,45 @@ model Order {
   id        String   @id @default(uuid())
   userId    String
   total     Float
-  status    String   @default("pending")
+  status    String   @default("PENDING")
   items     Json
+  paymentStatus String @default("PENDING")
+  paymentProvider String?
+  paymentReference String?
+  paidAt   DateTime?
+  failedAt DateTime?
+  refundedAt DateTime?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments  Payment[]
 
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+}
+
+model Payment {
+  id                String   @id @default(uuid())
+  orderId           String
+  userId            String
+  provider          String
+  amount            Int
+  currency          String   @default("INR")
+  status            String
+  providerOrderId   String?
+  providerPaymentId String?
+  providerSignature String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([provider])
+  @@index([status])
+  @@index([providerOrderId])
 }
 
 model Wishlist {
