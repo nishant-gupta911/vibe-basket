@@ -18,6 +18,7 @@ import { CacheModule } from './common/cache/cache.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { MetricsModule } from './common/metrics/metrics.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { CouponsModule } from './modules/coupons/coupons.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
     RecommendationModule,
     NotificationsModule,
     PaymentsModule,
+    CouponsModule,
     CartModule,
     OrderModule,
     AIModule,

@@ -1,7 +1,9 @@
 import { IsOptional, IsString } from 'class-validator';
 
 export class CreateOrderDto {
-  // Order will be created from cart items
+  @IsOptional()
+  @IsString()
+  couponCode?: string;
 }
 
 export class QueryOrderDto {

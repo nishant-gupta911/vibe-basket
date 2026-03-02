@@ -17,6 +17,7 @@ model User {
   cart      Cart?
   orders    Order[]
   payments  Payment[]
+  redemptions CouponRedemption[]
   wishlists Wishlist[]
   reviews   Review[]
   events    AnalyticsEvent[]
@@ -70,6 +71,9 @@ model CartItem {
 model Order {
   id        String   @id @default(uuid())
   userId    String
+  subtotal  Float    @default(0)
+  discountAmount Float @default(0)
+  couponCode String?
   total     Float
   status    String   @default("PENDING")
   items     Json
@@ -82,10 +86,44 @@ model Order {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   payments  Payment[]
+  redemptions CouponRedemption[]
 
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+}
+
+model Coupon {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  type        String
+  amount      Float
+  expiresAt   DateTime?
+  usageLimit  Int?
+  perUserLimit Int?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  redemptions CouponRedemption[]
+
+  @@index([code])
+  @@index([isActive])
+  @@index([expiresAt])
+}
+
+model CouponRedemption {
+  id        String   @id @default(uuid())
+  couponId  String
+  userId    String
+  orderId   String
+  createdAt DateTime @default(now())
+
+  coupon Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([couponId, userId, orderId])
+  @@index([couponId])
+  @@index([userId])
 }
 
 model Payment {

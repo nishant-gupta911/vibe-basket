@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../../config/prisma.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { CouponsService } from '../coupons/coupons.service';
+import { CreateOrderDto } from './dto/order.dto';
 
 @Injectable()
 export class OrderService {
@@ -9,9 +11,10 @@ export class OrderService {
     private prisma: PrismaService,
     private analyticsService: AnalyticsService,
     private notificationsService: NotificationsService,
+    private couponsService: CouponsService,
   ) {}
 
-  async createOrder(userId: string) {
+  async createOrder(userId: string, dto: CreateOrderDto) {
     const cart = await this.prisma.cart.findUnique({
       where: { userId },
       include: { items: true },
@@ -21,8 +24,8 @@ export class OrderService {
       throw new BadRequestException('Cart is empty');
     }
 
-    // Calculate total and get product details
-    let total = 0;
+    // Calculate subtotal and get product details
+    let subtotal = 0;
     const orderItems = [];
     const productIds = cart.items.map((item) => item.productId);
     const products = await this.prisma.product.findMany({
@@ -42,26 +45,53 @@ export class OrderService {
       }
 
       const itemTotal = product.price * item.quantity;
-      total += itemTotal;
+      subtotal += itemTotal;
 
       orderItems.push({
         productId: product.id,
         title: product.title,
+        category: product.category,
         price: product.price,
         quantity: item.quantity,
         subtotal: itemTotal,
       });
     }
 
+    let discountAmount = 0;
+    let couponCode: string | undefined;
+    if (dto?.couponCode) {
+      const validation = await this.couponsService.validateCoupon(dto.couponCode, userId, subtotal);
+      discountAmount = validation.discountAmount;
+      couponCode = validation.coupon.code;
+    }
+
+    const total = Math.max(0, subtotal - discountAmount);
+
     // Create order
     const order = await this.prisma.order.create({
       data: {
         userId,
+        subtotal,
+        discountAmount,
+        couponCode,
         total,
         status: 'PENDING',
         items: orderItems,
       },
     });
+
+    if (couponCode) {
+      const coupon = await this.prisma.coupon.findUnique({ where: { code: couponCode } });
+      if (coupon) {
+        await this.prisma.couponRedemption.create({
+          data: {
+            couponId: coupon.id,
+            userId,
+            orderId: order.id,
+          },
+        });
+      }
+    }
 
     await this.analyticsService.trackEvent(userId, null, 'purchase', {
       orderId: order.id,
