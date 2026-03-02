@@ -140,6 +140,7 @@ export default function CartPage() {
                               <button
                                 className="h-8 w-8 flex items-center justify-center hover:bg-secondary transition-colors"
                                 onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                                aria-label={`Decrease quantity for ${item.product.name}`}
                               >
                                 <Minus size={14} />
                               </button>
@@ -149,6 +150,7 @@ export default function CartPage() {
                               <button
                                 className="h-8 w-8 flex items-center justify-center hover:bg-secondary transition-colors"
                                 onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                                aria-label={`Increase quantity for ${item.product.name}`}
                               >
                                 <Plus size={14} />
                               </button>
@@ -159,6 +161,7 @@ export default function CartPage() {
                             <button
                               className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
                               onClick={() => handleRemoveItem(item.id, item.product.name)}
+                              aria-label={`Remove ${item.product.name} from cart`}
                             >
                               <Trash2 size={16} />
                             </button>

@@ -324,6 +324,7 @@ export default function ProductDetailPage({ id }: ProductDetailPageProps) {
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
                       className="h-11 w-11 flex items-center justify-center hover:bg-secondary transition-colors"
+                      aria-label="Decrease quantity"
                     >
                       <Minus size={16} />
                     </button>
@@ -333,6 +334,7 @@ export default function ProductDetailPage({ id }: ProductDetailPageProps) {
                     <button
                       onClick={() => setQuantity(quantity + 1)}
                       className="h-11 w-11 flex items-center justify-center hover:bg-secondary transition-colors"
+                      aria-label="Increase quantity"
                     >
                       <Plus size={16} />
                     </button>
@@ -351,13 +353,13 @@ export default function ProductDetailPage({ id }: ProductDetailPageProps) {
                 </PremiumButton>
 
                 <HoverLift>
-                  <PremiumButton variant="outline" size="icon" className="h-11 w-11">
+                  <PremiumButton variant="outline" size="icon" className="h-11 w-11" aria-label="Add to wishlist">
                     <Heart size={18} />
                   </PremiumButton>
                 </HoverLift>
 
                 <HoverLift>
-                  <PremiumButton variant="outline" size="icon" className="h-11 w-11">
+                  <PremiumButton variant="outline" size="icon" className="h-11 w-11" aria-label="Share product">
                     <Share2 size={18} />
                   </PremiumButton>
                 </HoverLift>

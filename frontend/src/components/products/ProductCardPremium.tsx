@@ -136,12 +136,14 @@ const ProductCardPremiumComponent = ({ product, variant = 'default' }: ProductCa
                     ? 'bg-red-500 text-white' 
                     : 'bg-white/90 backdrop-blur-sm text-foreground hover:bg-white'
                 )}
+                aria-label={isLiked ? 'Remove from wishlist' : 'Add to wishlist'}
               >
                 <Heart className={cn('w-4 h-4', isLiked && 'fill-current')} />
               </button>
               <Link
                 href={`/products/${product.id}`}
                 className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-white transition-colors"
+                aria-label="View product details"
               >
                 <Eye className="w-4 h-4" />
               </Link>
