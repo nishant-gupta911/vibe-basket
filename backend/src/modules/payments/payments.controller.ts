@@ -1,8 +1,9 @@
 import { Body, Controller, Headers, Post, Req, Request, UseGuards } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { ConfirmPaymentDto, CreatePaymentIntentDto } from './dto/payment.dto';
+import { ConfirmPaymentDto, CreatePaymentIntentDto, RefundPaymentDto } from './dto/payment.dto';
 import { Request as ExpressRequest } from 'express';
+import { AdminGuard } from '../../common/guards/admin.guard';
 
 @Controller('payments')
 @UseGuards(JwtAuthGuard)
@@ -23,6 +24,12 @@ export class PaymentsController {
       dto.razorpay_payment_id,
       dto.razorpay_signature,
     );
+  }
+
+  @Post('refund')
+  @UseGuards(AdminGuard)
+  refund(@Body() dto: RefundPaymentDto) {
+    return this.paymentsService.refundPayment(dto.orderId, dto.amount);
   }
 
   @Post('webhook')

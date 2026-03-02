@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreatePaymentIntentDto {
   @IsString()
@@ -21,4 +21,13 @@ export class ConfirmPaymentDto {
 
   @IsString()
   razorpay_signature: string;
+}
+
+export class RefundPaymentDto {
+  @IsString()
+  orderId: string;
+
+  @IsOptional()
+  @IsNumber()
+  amount?: number;
 }

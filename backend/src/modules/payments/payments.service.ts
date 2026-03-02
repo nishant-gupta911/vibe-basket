@@ -4,6 +4,7 @@ import { InvoiceService } from '../invoice/invoice.service';
 import crypto from 'crypto';
 
 const RAZORPAY_API = 'https://api.razorpay.com/v1/orders';
+const RAZORPAY_REFUND_API = 'https://api.razorpay.com/v1/payments';
 
 @Injectable()
 export class PaymentsService {
@@ -280,5 +281,79 @@ export class PaymentsService {
     }
 
     return { success: true, data: { handled: true }, message: 'Webhook processed' };
+  }
+
+  async refundPayment(orderId: string, amount?: number) {
+    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    const payment = await this.prisma.payment.findFirst({
+      where: { orderId: order.id, status: 'PAID' },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!payment?.providerPaymentId) {
+      throw new BadRequestException('Payment not eligible for refund');
+    }
+
+    const refundAmount = amount ? Math.min(Math.round(amount * 100), payment.amount) : payment.amount;
+    const { token } = this.getRazorpayAuth();
+    const response = await fetch(`${RAZORPAY_REFUND_API}/${payment.providerPaymentId}/refund`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        amount: refundAmount,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new BadRequestException(`Refund failed: ${errorText}`);
+    }
+
+    const refund = await response.json();
+    const newRefundedAmount = payment.refundedAmount + refundAmount;
+    const isFullyRefunded = newRefundedAmount >= payment.amount;
+
+    await this.prisma.$transaction([
+      this.prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          refundedAmount: newRefundedAmount,
+          refundStatus: isFullyRefunded ? 'REFUNDED' : 'PARTIAL',
+          status: isFullyRefunded ? 'REFUNDED' : payment.status,
+        },
+      }),
+      this.prisma.order.update({
+        where: { id: order.id },
+        data: {
+          status: isFullyRefunded ? 'REFUNDED' : order.status,
+          paymentStatus: isFullyRefunded ? 'REFUNDED' : order.paymentStatus,
+          refundedAt: isFullyRefunded ? new Date() : order.refundedAt,
+        },
+      }),
+      this.prisma.transactionLog.create({
+        data: {
+          orderId: order.id,
+          paymentId: payment.id,
+          provider: 'RAZORPAY',
+          status: isFullyRefunded ? 'REFUNDED' : 'PARTIAL_REFUND',
+          amount: refundAmount,
+          reference: refund.id,
+          message: 'Refund processed',
+        },
+      }),
+    ]);
+
+    return {
+      success: true,
+      data: { orderId: order.id, refundedAmount: newRefundedAmount },
+      message: 'Refund processed',
+    };
   }
 }
