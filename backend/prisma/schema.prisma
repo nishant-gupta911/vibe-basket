@@ -90,9 +90,23 @@ model Order {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   payments  Payment[]
   redemptions CouponRedemption[]
+  invoice  Invoice?
 
   @@index([userId])
   @@index([status])
+  @@index([createdAt])
+}
+
+model Invoice {
+  id        String   @id @default(uuid())
+  orderId   String   @unique
+  invoiceNumber String
+  filePath  String
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceNumber])
   @@index([createdAt])
 }
 

@@ -20,6 +20,7 @@ import { MetricsModule } from './common/metrics/metrics.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
 import { TaxModule } from './modules/tax/tax.module';
+import { InvoiceModule } from './modules/invoice/invoice.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { TaxModule } from './modules/tax/tax.module';
     PaymentsModule,
     CouponsModule,
     TaxModule,
+    InvoiceModule,
     CartModule,
     OrderModule,
     AIModule,

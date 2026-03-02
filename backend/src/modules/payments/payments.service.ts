@@ -1,12 +1,13 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { InvoiceService } from '../invoice/invoice.service';
 import crypto from 'crypto';
 
 const RAZORPAY_API = 'https://api.razorpay.com/v1/orders';
 
 @Injectable()
 export class PaymentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private invoiceService: InvoiceService) {}
 
   private getRazorpayAuth() {
     const keyId = process.env.RAZORPAY_KEY_ID;
@@ -189,6 +190,8 @@ export class PaymentsService {
       }),
     ]);
 
+    await this.invoiceService.generateInvoice(order.id);
+
     return {
       success: true,
       data: { orderId: order.id, status: 'PAID' },
@@ -268,6 +271,10 @@ export class PaymentsService {
               },
             }),
           ]);
+
+          if (status === 'PAID') {
+            await this.invoiceService.generateInvoice(payment.orderId);
+          }
         }
       }
     }
