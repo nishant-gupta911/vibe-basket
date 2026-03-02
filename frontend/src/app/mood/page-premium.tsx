@@ -59,6 +59,7 @@ export default function MoodPagePremium() {
   const [mood, setMood] = useState('');
   const [budget, setBudget] = useState('');
   const [suggestions, setSuggestions] = useState<ProductSuggestion[]>([]);
+  const [clarification, setClarification] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const { addToCart } = useCart();
@@ -82,6 +83,7 @@ export default function MoodPagePremium() {
 
     setIsLoading(true);
     setSuggestions([]);
+    setClarification(null);
     setHasSearched(true);
 
     try {
@@ -97,8 +99,9 @@ export default function MoodPagePremium() {
 
       if (response.success) {
         setSuggestions(response.data.suggestions || []);
+        setClarification(response.data.clarification || null);
         if (response.data.suggestions.length === 0) {
-          toast.info('No products found matching your criteria. Try adjusting your budget.');
+          toast.info(response.data.clarification || 'No products found matching your criteria. Try adjusting your budget.');
         } else {
           toast.success(`Found ${response.data.suggestions.length} perfect matches!`);
         }
@@ -354,7 +357,7 @@ export default function MoodPagePremium() {
               <EmptyState
                 icon={Sparkles}
                 title="No Matches Found"
-                description="We couldn't find products matching your criteria. Try adjusting your preferences or budget."
+                description={clarification || "We couldn't find products matching your criteria. Try adjusting your preferences or budget."}
                 action={{
                   label: 'Try Different Preferences',
                   onClick: () => {

@@ -41,6 +41,7 @@ export interface ProductSuggestion {
 
 export interface MoodRecommendation {
   suggestions: ProductSuggestion[];
+  clarification?: string;
 }
 
 interface Product {
@@ -50,6 +51,7 @@ interface Product {
   category: string;
   price: number;
   image: string | null;
+  tags?: string[];
 }
 
 interface ScoredProduct {
@@ -70,11 +72,15 @@ export class RecommendationService {
     categoryWeights: Record<string, number> = {},
   ): Promise<MoodRecommendation> {
     try {
+      const resolved = this.resolveMoodAndOccasion(request.mood, request.occasion);
       // Step 1: Find the mood profile (intent mapping)
-      const profile = findMoodProfile(request.mood, request.occasion);
+      const profile = findMoodProfile(resolved.mood, resolved.occasion);
       
       if (!profile) {
-        return { suggestions: [] };
+        return {
+          suggestions: [],
+          clarification: 'Could you clarify the mood or occasion? Try phrases like "Relaxed Birthday" or "Elegant Anniversary".',
+        };
       }
 
       // Step 2: Fetch products within budget (strict enforcement)
@@ -135,6 +141,7 @@ export class RecommendationService {
         category: true,
         price: true,
         image: true,
+        tags: true,
       },
     });
   }
@@ -186,6 +193,14 @@ export class RecommendationService {
       }
       score = Math.min(score, 50); // Cap at 50 points
 
+      // Factor 1b: Tag matches from product tags (20 points max)
+      if ((product as any).tags && Array.isArray((product as any).tags)) {
+        const productTags = ((product as any).tags as string[]).map((tag) => tag.toLowerCase());
+        const intentTags = profile.intentTags.map((tag) => tag.toLowerCase());
+        const tagMatches = intentTags.filter((tag) => productTags.includes(tag)).length;
+        score += Math.min(20, tagMatches * 5);
+      }
+
       // Factor 2: Price optimization (30 points max)
       // Products close to target price score higher
       const priceDiff = Math.abs(product.price - targetPrice);
@@ -210,6 +225,47 @@ export class RecommendationService {
         matchedTags,
       };
     });
+  }
+
+  private resolveMoodAndOccasion(mood: string, occasion: string) {
+    const normalized = `${mood} ${occasion}`.toLowerCase();
+    const moodMap: Record<string, string> = {
+      excited: 'Excited',
+      romantic: 'Romantic',
+      thoughtful: 'Thoughtful',
+      fun: 'Fun',
+      elegant: 'Elegant',
+      casual: 'Casual',
+      professional: 'Professional',
+      adventurous: 'Adventurous',
+      relaxed: 'Relaxed',
+      energetic: 'Energetic',
+    };
+
+    const occasionMap: Record<string, string> = {
+      birthday: 'Birthday',
+      anniversary: 'Anniversary',
+      wedding: 'Wedding',
+      graduation: 'Graduation',
+      christmas: 'Christmas',
+      'valentine': "Valentine's Day",
+      'mother': "Mother's Day",
+      'father': "Father's Day",
+      'just because': 'Just Because',
+      'thank you': 'Thank You',
+    };
+
+    let resolvedMood = mood;
+    let resolvedOccasion = occasion;
+
+    Object.keys(moodMap).forEach((key) => {
+      if (normalized.includes(key)) resolvedMood = moodMap[key];
+    });
+    Object.keys(occasionMap).forEach((key) => {
+      if (normalized.includes(key)) resolvedOccasion = occasionMap[key];
+    });
+
+    return { mood: resolvedMood, occasion: resolvedOccasion };
   }
 
   /**
