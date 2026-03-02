@@ -11,6 +11,8 @@ import { productService, Product } from '@/features/products/productService';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -27,18 +29,22 @@ import {
 } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 
-type SortOption = 'featured' | 'price-asc' | 'price-desc' | 'rating' | 'newest';
+type SortOption = 'featured' | 'price-asc' | 'price-desc' | 'rating' | 'newest' | 'popularity';
 
 export default function ProductsPage() {
   const searchParams = useSearchParams();
   const [sortBy, setSortBy] = useState<SortOption>('featured');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [minRating, setMinRating] = useState<number | null>(null);
+  const [tags, setTags] = useState('');
+  const [inStockOnly, setInStockOnly] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Array<{ name: string; count: number }>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   const searchQuery = searchParams.get('search') || '';
   const categoryParam = searchParams.get('category') || '';
@@ -47,7 +53,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchProducts();
-  }, [searchQuery, selectedCategory, priceRange, page, categoryParam]);
+  }, [searchQuery, selectedCategory, priceRange, page, categoryParam, minRating, tags, inStockOnly, sortBy]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -72,10 +78,15 @@ export default function ProductsPage() {
         category: categoryParam || selectedCategory || undefined,
         minPrice: priceRange[0],
         maxPrice: priceRange[1],
+        minRating: minRating ?? undefined,
+        tags: tags.trim() || undefined,
+        inStock: inStockOnly ? true : undefined,
+        sortBy: sortBy === 'featured' ? 'newest' : sortBy,
       });
 
       setProducts(response.data.products);
       setTotalPages(response.data.pagination?.totalPages || 1);
+      setTotalCount(response.data.pagination?.total || response.data.products.length);
     } catch {
       toast.error('Failed to fetch products');
     } finally {
@@ -83,24 +94,22 @@ export default function ProductsPage() {
     }
   };
 
-  const sortedProducts = [...products].sort((a, b) => {
-    switch (sortBy) {
-      case 'price-asc':
-        return a.price - b.price;
-      case 'price-desc':
-        return b.price - a.price;
-      default:
-        return 0;
-    }
-  });
-
   const clearFilters = () => {
     setSelectedCategory('');
     setPriceRange([0, 1000]);
+    setMinRating(null);
+    setTags('');
+    setInStockOnly(false);
     setPage(1);
   };
 
-  const hasActiveFilters = selectedCategory || priceRange[0] > 0 || priceRange[1] < 1000;
+  const hasActiveFilters =
+    selectedCategory ||
+    priceRange[0] > 0 ||
+    priceRange[1] < 1000 ||
+    minRating !== null ||
+    tags.trim().length > 0 ||
+    inStockOnly;
 
   const FilterContent = () => (
     <div className="space-y-8">
@@ -164,6 +173,46 @@ export default function ProductsPage() {
         </div>
       </div>
 
+      {/* Rating */}
+      <div>
+        <h3 className="text-sm font-medium text-foreground mb-4 tracking-wide">Minimum Rating</h3>
+        <div className="flex flex-wrap gap-2">
+          {[null, 4, 3, 2, 1].map((value) => (
+            <button
+              key={value ?? 'all'}
+              onClick={() => setMinRating(value)}
+              className={cn(
+                'px-4 py-2 rounded-full text-sm transition-all duration-300',
+                minRating === value
+                  ? 'bg-foreground text-background'
+                  : 'bg-secondary text-foreground hover:bg-secondary/80'
+              )}
+            >
+              {value ? `${value}+` : 'All'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tags */}
+      <div>
+        <h3 className="text-sm font-medium text-foreground mb-4 tracking-wide">Tags</h3>
+        <Input
+          placeholder="e.g. casual, premium"
+          value={tags}
+          onChange={(e) => setTags(e.target.value)}
+        />
+      </div>
+
+      {/* Stock */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-medium text-foreground mb-1 tracking-wide">In Stock Only</h3>
+          <p className="text-xs text-muted-foreground">Hide out of stock items</p>
+        </div>
+        <Switch checked={inStockOnly} onCheckedChange={setInStockOnly} />
+      </div>
+
       {hasActiveFilters && (
         <button
           onClick={clearFilters}
@@ -224,7 +273,7 @@ export default function ProductsPage() {
               )}
             </h1>
             <p className="text-background/60 text-lg">
-              {sortedProducts.length} {sortedProducts.length === 1 ? 'product' : 'products'} available
+              {totalCount} {totalCount === 1 ? 'product' : 'products'} available
             </p>
           </div>
         </div>
@@ -277,6 +326,7 @@ export default function ProductsPage() {
                     <SelectItem value="price-asc">Price: Low → High</SelectItem>
                     <SelectItem value="price-desc">Price: High → Low</SelectItem>
                     <SelectItem value="rating">Top Rated</SelectItem>
+                    <SelectItem value="popularity">Most Popular</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -290,9 +340,9 @@ export default function ProductsPage() {
                 <ProductSkeleton key={i} />
               ))}
             </div>
-          ) : sortedProducts.length > 0 ? (
+          ) : products.length > 0 ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {sortedProducts.map((product, index) => (
+              {products.map((product, index) => (
                 <div
                   key={product.id}
                   className="animate-fade-in-up"

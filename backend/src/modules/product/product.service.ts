@@ -13,7 +13,9 @@ export class ProductService {
       minPrice,
       maxPrice,
       tags,
-      inStock = true,
+      minRating,
+      sortBy,
+      inStock,
       page = 1,
       limit = 20,
     } = query;
@@ -62,12 +64,32 @@ export class ProductService {
       }
     }
 
+    if (typeof minRating === 'number') {
+      where.rating = { gte: minRating };
+    }
+
+    const orderBy = (() => {
+      switch (sortBy) {
+        case 'price-asc':
+          return { price: 'asc' as const };
+        case 'price-desc':
+          return { price: 'desc' as const };
+        case 'popularity':
+          return { popularity: 'desc' as const };
+        case 'rating':
+          return { rating: 'desc' as const };
+        case 'newest':
+        default:
+          return { createdAt: 'desc' as const };
+      }
+    })();
+
     const [products, total] = await Promise.all([
       this.prisma.product.findMany({
         where,
         skip,
         take: safeLimit,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
       }),
       this.prisma.product.count({ where }),
     ]);

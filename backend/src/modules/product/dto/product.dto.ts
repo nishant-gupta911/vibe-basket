@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsBoolean, Min, Max } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsBoolean, Min, Max, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateProductDto {
@@ -49,6 +49,18 @@ export class QueryProductDto {
   @IsString()
   @IsOptional()
   tags?: string;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @Max(5)
+  @Type(() => Number)
+  minRating?: number;
+
+  @IsString()
+  @IsOptional()
+  @IsIn(['newest', 'price-asc', 'price-desc', 'popularity', 'rating'])
+  sortBy?: string;
 
   @IsBoolean()
   @IsOptional()

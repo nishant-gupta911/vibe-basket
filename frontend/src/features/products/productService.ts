@@ -26,6 +26,10 @@ export interface ProductQuery {
   search?: string;
   minPrice?: number;
   maxPrice?: number;
+  tags?: string;
+  inStock?: boolean;
+  minRating?: number;
+  sortBy?: 'newest' | 'price-asc' | 'price-desc' | 'popularity' | 'rating';
 }
 
 type RawProduct = Partial<Product> & {
@@ -54,6 +58,10 @@ export const productService = {
     if (query.search) params.append('search', query.search);
     if (typeof query.minPrice === 'number') params.append('minPrice', query.minPrice.toString());
     if (typeof query.maxPrice === 'number') params.append('maxPrice', query.maxPrice.toString());
+    if (query.tags) params.append('tags', query.tags);
+    if (typeof query.inStock === 'boolean') params.append('inStock', String(query.inStock));
+    if (typeof query.minRating === 'number') params.append('minRating', query.minRating.toString());
+    if (query.sortBy) params.append('sortBy', query.sortBy);
 
     const suffix = params.toString();
     const response = await api.get<ProductsResponse>(suffix ? `/products?${suffix}` : '/products');
