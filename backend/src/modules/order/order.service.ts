@@ -72,8 +72,7 @@ export class OrderService {
     const taxInfo = await this.taxService.calculateTax(dto?.region, taxableAmount);
     const total = Math.max(0, taxableAmount + taxInfo.taxAmount);
 
-    // Create order
-    const order = await this.prisma.order.create({
+    const orderCreate = this.prisma.order.create({
       data: {
         userId,
         subtotal,
@@ -87,6 +86,20 @@ export class OrderService {
         items: orderItems,
       },
     });
+
+    const stockUpdates = cart.items.map((item) => {
+      const product = productMap.get(item.productId)!;
+      const newStock = Math.max(0, product.stock - item.quantity);
+      return this.prisma.product.update({
+        where: { id: product.id },
+        data: {
+          stock: newStock,
+          inStock: newStock > 0,
+        },
+      });
+    });
+
+    const [order] = await this.prisma.$transaction([orderCreate, ...stockUpdates]);
 
     if (couponCode) {
       const coupon = await this.prisma.coupon.findUnique({ where: { code: couponCode } });

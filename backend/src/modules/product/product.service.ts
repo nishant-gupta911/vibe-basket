@@ -266,4 +266,38 @@ export class ProductService {
       message: 'Product deleted',
     };
   }
+
+  async updateProductForVendor(userId: string, id: string, dto: UpdateProductDto) {
+    const vendor = await this.prisma.vendor.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+    if (!vendor) {
+      throw new NotFoundException('Vendor not found');
+    }
+
+    const product = await this.prisma.product.findFirst({
+      where: { id, vendorId: vendor.id },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    const updated = await this.prisma.product.update({
+      where: { id },
+      data: {
+        title: dto.title,
+        description: dto.description,
+        category: dto.category,
+        price: dto.price,
+        image: dto.image,
+        inStock: dto.inStock,
+        stock: dto.stock,
+        tags: dto.tags,
+      },
+    });
+
+    return { success: true, data: updated, message: 'Product updated' };
+  }
 }

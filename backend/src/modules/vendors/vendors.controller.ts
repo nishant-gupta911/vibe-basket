@@ -1,13 +1,15 @@
-import { Body, Controller, Get, Param, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
 import { VendorsService } from './vendors.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AdminGuard } from '../../common/guards/admin.guard';
 import { ApplyVendorDto, CreatePayoutDto } from './dto/vendor.dto';
 import { VendorGuard } from '../../common/guards/vendor.guard';
+import { ProductService } from '../product/product.service';
+import { UpdateProductDto } from '../product/dto/product.dto';
 
 @Controller('vendors')
 export class VendorsController {
-  constructor(private vendorsService: VendorsService) {}
+  constructor(private vendorsService: VendorsService, private productService: ProductService) {}
 
   @Post('apply')
   @UseGuards(JwtAuthGuard)
@@ -79,5 +81,11 @@ export class VendorsController {
   @UseGuards(JwtAuthGuard, AdminGuard)
   vendorMetrics(@Param('id') id: string) {
     return this.vendorsService.getVendorMetrics(id);
+  }
+
+  @Patch('products/:id')
+  @UseGuards(JwtAuthGuard, VendorGuard)
+  updateProduct(@Request() req, @Param('id') id: string, @Body() dto: UpdateProductDto) {
+    return this.productService.updateProductForVendor(req.user.userId, id, dto);
   }
 }
