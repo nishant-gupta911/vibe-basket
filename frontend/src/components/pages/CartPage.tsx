@@ -116,8 +116,8 @@ export default function CartPage() {
               {cart.items.map((item) => (
                 <Slide key={item.id} direction="left">
                   <HoverLift>
-                    <PremiumCard variant="default" className="flex gap-4 p-4">
-                      <Link href={`/products/${item.product.id}`} className="shrink-0">
+                    <PremiumCard variant="default" className="flex flex-col sm:flex-row gap-4 p-4">
+                      <Link href={`/products/${item.product.id}`} className="shrink-0 self-start">
                         <img
                           src={item.product.image}
                           alt={item.product.name}
@@ -166,7 +166,7 @@ export default function CartPage() {
                         </div>
                       </div>
 
-                      <div className="text-right">
+                      <div className="text-left sm:text-right sm:ml-auto mt-3 sm:mt-0">
                         <p className="font-bold text-foreground">
                           ${(item.product.price * item.quantity).toFixed(2)}
                         </p>
@@ -186,7 +186,7 @@ export default function CartPage() {
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <Reveal delay={0.2}>
-              <PremiumCard variant="elevated" className="p-6 sticky top-24">
+              <PremiumCard variant="elevated" className="p-6 lg:sticky lg:top-24">
                 <h2 className="text-xl font-bold text-foreground mb-6">Order Summary</h2>
 
                 <div className="space-y-3 mb-6">
