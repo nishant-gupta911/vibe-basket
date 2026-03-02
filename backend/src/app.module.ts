@@ -21,6 +21,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
 import { TaxModule } from './modules/tax/tax.module';
 import { InvoiceModule } from './modules/invoice/invoice.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { InvoiceModule } from './modules/invoice/invoice.module';
     CouponsModule,
     TaxModule,
     InvoiceModule,
+    ReportsModule,
     CartModule,
     OrderModule,
     AIModule,
