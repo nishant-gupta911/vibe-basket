@@ -138,6 +138,17 @@ export class PaymentsService {
       },
     });
 
+    await this.prisma.transactionLog.create({
+      data: {
+        orderId: order.id,
+        provider: 'RAZORPAY',
+        status: 'CREATED',
+        amount,
+        reference: razorpayOrder.id,
+        message: 'Payment intent created',
+      },
+    });
+
     return {
       success: true,
       data: {
