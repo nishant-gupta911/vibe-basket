@@ -1,13 +1,14 @@
 import { Product } from '@/types';
 import { ProductCardPremium } from './ProductCardPremium';
 import { StaggerContainer, Slide } from '@/design-system/components/motion';
+import { memo } from 'react';
 
 interface ProductGridProps {
   products: Product[];
   columns?: 2 | 3 | 4;
 }
 
-export function ProductGrid({ products, columns = 4 }: ProductGridProps) {
+function ProductGridComponent({ products, columns = 4 }: ProductGridProps) {
   const gridCols = {
     2: 'grid-cols-1 sm:grid-cols-2',
     3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
@@ -24,3 +25,5 @@ export function ProductGrid({ products, columns = 4 }: ProductGridProps) {
     </StaggerContainer>
   );
 }
+
+export const ProductGrid = memo(ProductGridComponent);
