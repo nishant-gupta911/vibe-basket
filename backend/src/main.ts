@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import express from 'express';
 import { AppModule } from './app.module';
 import { config, validateEnv } from './config/env';
 import { createRequestLogger } from './common/middleware/request-logger.middleware';
@@ -12,7 +13,16 @@ import { MetricsService } from './common/metrics/metrics.service';
 
 async function bootstrap() {
   validateEnv();
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
+
+  app.use(
+    express.json({
+      verify: (req, _res, buf) => {
+        (req as any).rawBody = buf;
+      },
+    }),
+  );
+  app.use(express.urlencoded({ extended: true }));
 
   app.use(securityHeaders);
   app.use(rateLimit);

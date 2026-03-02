@@ -99,6 +99,7 @@ model Payment {
   providerOrderId   String?
   providerPaymentId String?
   providerSignature String?
+  idempotencyKey    String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -109,7 +110,33 @@ model Payment {
   @@index([userId])
   @@index([provider])
   @@index([status])
-  @@index([providerOrderId])
+  @@unique([providerOrderId])
+  @@index([idempotencyKey])
+}
+
+model PaymentWebhookEvent {
+  id        String   @id @default(uuid())
+  eventId   String   @unique
+  provider  String
+  createdAt DateTime @default(now())
+}
+
+model TransactionLog {
+  id                String   @id @default(uuid())
+  orderId           String?
+  paymentId         String?
+  provider          String
+  status            String
+  amount            Int?
+  reference         String?
+  message           String?
+  createdAt         DateTime @default(now())
+
+  @@index([orderId])
+  @@index([paymentId])
+  @@index([provider])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Wishlist {

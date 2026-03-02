@@ -18,7 +18,7 @@ export class PaymentsService {
     return { keyId, token, keySecret };
   }
 
-  async createPaymentIntent(userId: string, orderId: string) {
+  async createPaymentIntent(userId: string, orderId: string, idempotencyKey?: string) {
     const order = await this.prisma.order.findFirst({
       where: { id: orderId, userId },
     });
@@ -67,6 +67,7 @@ export class PaymentsService {
       headers: {
         Authorization: `Basic ${token}`,
         'Content-Type': 'application/json',
+        ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
       },
       body: JSON.stringify({
         amount,
@@ -92,6 +93,7 @@ export class PaymentsService {
         currency: razorpayOrder.currency,
         status: razorpayOrder.status?.toUpperCase() || 'CREATED',
         providerOrderId: razorpayOrder.id,
+        idempotencyKey,
       },
     });
 
@@ -138,10 +140,21 @@ export class PaymentsService {
       .digest('hex');
 
     if (expected !== razorpaySignature) {
-      await this.prisma.order.update({
-        where: { id: order.id },
-        data: { status: 'FAILED', paymentStatus: 'FAILED', failedAt: new Date() },
-      });
+      await this.prisma.$transaction([
+        this.prisma.order.update({
+          where: { id: order.id },
+          data: { status: 'FAILED', paymentStatus: 'FAILED', failedAt: new Date() },
+        }),
+        this.prisma.transactionLog.create({
+          data: {
+            orderId: order.id,
+            provider: 'RAZORPAY',
+            status: 'FAILED',
+            reference: razorpayOrderId,
+            message: 'Invalid payment signature',
+          },
+        }),
+      ]);
       throw new BadRequestException('Invalid payment signature');
     }
 
@@ -164,6 +177,16 @@ export class PaymentsService {
           paidAt: new Date(),
         },
       }),
+      this.prisma.transactionLog.create({
+        data: {
+          orderId: order.id,
+          provider: 'RAZORPAY',
+          status: 'PAID',
+          amount: Math.round(order.total * 100),
+          reference: razorpayPaymentId,
+          message: 'Payment confirmed',
+        },
+      }),
     ]);
 
     return {
@@ -171,5 +194,84 @@ export class PaymentsService {
       data: { orderId: order.id, status: 'PAID' },
       message: 'Payment confirmed',
     };
+  }
+
+  async handleWebhook(eventId: string, signature: string, body: string) {
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    if (!secret) {
+      throw new BadRequestException('Webhook secret not configured');
+    }
+
+    const expected = crypto.createHmac('sha256', secret).update(body).digest('hex');
+    if (expected !== signature) {
+      throw new BadRequestException('Invalid webhook signature');
+    }
+
+    const parsed = JSON.parse(body);
+    const event = parsed?.event;
+
+    if (!eventId || !event) {
+      throw new BadRequestException('Invalid webhook payload');
+    }
+
+    const alreadyHandled = await this.prisma.paymentWebhookEvent.findUnique({
+      where: { eventId },
+    });
+
+    if (alreadyHandled) {
+      return { success: true, data: { handled: false }, message: 'Duplicate webhook ignored' };
+    }
+
+    await this.prisma.paymentWebhookEvent.create({
+      data: { eventId, provider: 'RAZORPAY' },
+    });
+
+    if (event === 'payment.captured' || event === 'payment.failed') {
+      const paymentEntity = parsed?.payload?.payment?.entity;
+      const providerOrderId = paymentEntity?.order_id;
+      const providerPaymentId = paymentEntity?.id;
+      const status = event === 'payment.captured' ? 'PAID' : 'FAILED';
+
+      if (providerOrderId) {
+        const payment = await this.prisma.payment.findFirst({
+          where: { providerOrderId },
+        });
+
+        if (payment) {
+          await this.prisma.$transaction([
+            this.prisma.payment.updateMany({
+              where: { providerOrderId },
+              data: {
+                status,
+                providerPaymentId: providerPaymentId || payment.providerPaymentId,
+              },
+            }),
+            this.prisma.order.update({
+              where: { id: payment.orderId },
+              data: {
+                status,
+                paymentStatus: status,
+                paymentProvider: 'RAZORPAY',
+                paymentReference: providerPaymentId || payment.providerPaymentId,
+                ...(status === 'PAID' ? { paidAt: new Date() } : { failedAt: new Date() }),
+              },
+            }),
+            this.prisma.transactionLog.create({
+              data: {
+                orderId: payment.orderId,
+                paymentId: payment.id,
+                provider: 'RAZORPAY',
+                status,
+                amount: payment.amount,
+                reference: providerPaymentId || payment.providerPaymentId || providerOrderId,
+                message: `Webhook ${event}`,
+              },
+            }),
+          ]);
+        }
+      }
+    }
+
+    return { success: true, data: { handled: true }, message: 'Webhook processed' };
   }
 }

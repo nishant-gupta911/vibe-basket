@@ -1,8 +1,12 @@
-import { IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class CreatePaymentIntentDto {
   @IsString()
   orderId: string;
+
+  @IsString()
+  @IsOptional()
+  idempotencyKey?: string;
 }
 
 export class ConfirmPaymentDto {
