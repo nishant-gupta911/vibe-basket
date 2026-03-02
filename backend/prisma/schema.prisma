@@ -13,8 +13,12 @@ model User {
   email     String   @unique
   password  String
   name      String
+  role      String   @default("user")
   cart      Cart?
   orders    Order[]
+  wishlists Wishlist[]
+  reviews   Review[]
+  events    AnalyticsEvent[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -32,8 +36,15 @@ model Product {
   reviewCount Int       @default(0)
   popularity  Int       @default(0)
   tags        String[]  @default([])
+  reviews     Review[]
+  wishlists   Wishlist[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  @@index([category])
+  @@index([price])
+  @@index([rating])
+  @@index([popularity])
 }
 
 model Cart {
@@ -60,4 +71,46 @@ model Order {
   items     Json
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Wishlist {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([productId])
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(uuid())
+  userId    String?
+  event     String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([event])
+  @@index([createdAt])
 }

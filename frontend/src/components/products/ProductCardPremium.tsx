@@ -6,8 +6,11 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/features/cart/useCart';
 import { Product } from '@/types';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useWishlist } from '@/features/wishlist/useWishlist';
+import { useAuth } from '@/features/auth/useAuth';
+import { RatingStars } from './RatingStars';
 
 interface ProductCardPremiumProps {
   product: Product;
@@ -18,7 +21,9 @@ export function ProductCardPremium({ product, variant = 'default' }: ProductCard
   const { addToCart, isLoading } = useCart();
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const { isInWishlist, addToWishlist, removeFromWishlist, fetchWishlist, hasLoaded } = useWishlist();
+  const isLiked = isInWishlist(product.id);
   const safeName = product.name || 'Untitled Product';
   const safeImage = product.image || '/placeholder.svg';
   const safeCategory = product.category || 'uncategorized';
@@ -37,11 +42,30 @@ export function ProductCardPremium({ product, variant = 'default' }: ProductCard
     }
   };
 
-  const handleLike = (e: React.MouseEvent) => {
+  useEffect(() => {
+    if (isAuthenticated && !hasLoaded) {
+      fetchWishlist();
+    }
+  }, [fetchWishlist, hasLoaded, isAuthenticated]);
+
+  const handleLike = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsLiked(!isLiked);
-    toast.success(isLiked ? 'Removed from wishlist' : 'Added to wishlist');
+    if (!isAuthenticated) {
+      toast.error('Please log in to manage your wishlist');
+      return;
+    }
+    try {
+      if (isLiked) {
+        await removeFromWishlist(product.id);
+        toast.success('Removed from wishlist');
+      } else {
+        await addToWishlist(product);
+        toast.success('Added to wishlist');
+      }
+    } catch (error: any) {
+      toast.error(error?.message || 'Wishlist update failed');
+    }
   };
 
   const discount = product.originalPrice
@@ -149,6 +173,9 @@ export function ProductCardPremium({ product, variant = 'default' }: ProductCard
             <h3 className="font-medium text-foreground text-lg leading-snug mb-3 line-clamp-2 group-hover:text-primary transition-colors duration-300">
               {safeName}
             </h3>
+            <div className="mb-3">
+              <RatingStars rating={product.rating || 0} reviewCount={product.reviewCount || 0} size="sm" />
+            </div>
             <div className="flex items-baseline gap-2">
               <span className="text-xl font-semibold text-foreground">
                 ${safePrice.toFixed(2)}
@@ -261,6 +288,9 @@ export function ProductCardPremium({ product, variant = 'default' }: ProductCard
           <h3 className="font-medium text-foreground leading-snug mb-2 line-clamp-2 group-hover:text-primary transition-colors duration-300">
             {safeName}
           </h3>
+          <div className="mb-2">
+            <RatingStars rating={product.rating || 0} reviewCount={product.reviewCount || 0} size="sm" />
+          </div>
           <div className="flex items-baseline gap-2">
             <span className="text-lg font-semibold text-foreground">
               ${safePrice.toFixed(2)}
