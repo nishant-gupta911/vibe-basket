@@ -10,6 +10,7 @@ import { sanitizeInput } from './common/middleware/sanitize.middleware';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { sessionTracker } from './common/middleware/session.middleware';
 import { MetricsService } from './common/metrics/metrics.service';
+import { logger } from './common/utils/logger';
 
 async function bootstrap() {
   validateEnv();
@@ -50,7 +51,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   
   await app.listen(config.port);
-  console.log(`🚀 Backend running on http://localhost:${config.port}/api`);
+  logger.log('info', 'server_started', { url: `http://localhost:${config.port}/api` });
 }
 
 bootstrap();

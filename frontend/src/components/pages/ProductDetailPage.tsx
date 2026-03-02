@@ -20,7 +20,6 @@ import { AxiosError } from 'axios';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { trackEvent } from '@/lib/analytics';
-import { productService } from '@/features/products/productService';
 import { recommendationService } from '@/features/recommendations/recommendationService';
 
 interface ProductDetailPageProps {

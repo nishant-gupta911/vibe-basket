@@ -28,10 +28,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         });
       }
       await this.$connect();
-      console.log('✅ Database connected');
+      logger.log('info', 'db_connected', {});
     } catch (error: any) {
-      console.error('❌ Database connection failed:', error?.message || error);
-      console.error('⚠️ API started without an active database connection');
+      logger.log('error', 'db_connection_failed', { message: error?.message || error });
+      logger.log('warn', 'db_connection_missing', {});
       if (process.env.NODE_ENV === 'test') {
         throw error;
       }

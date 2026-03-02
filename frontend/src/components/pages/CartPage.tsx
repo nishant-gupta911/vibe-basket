@@ -2,9 +2,8 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Trash2, Minus, Plus, ShoppingBag, ArrowRight, Package } from 'lucide-react';
+import { Trash2, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { PremiumButton } from '@/design-system/components/premium-button';
 import { PremiumCard } from '@/design-system/components/premium-card';
