@@ -8,6 +8,7 @@ import { Search as SearchIcon } from 'lucide-react';
 import { Reveal, Fade } from '@/design-system/components/motion';
 import { EmptyState } from '@/design-system/components/loading-states';
 import { productService, Product } from '@/features/products/productService';
+import { trackEvent } from '@/lib/analytics';
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
@@ -28,6 +29,8 @@ export default function SearchPage() {
       try {
         setIsLoading(true);
         setError(null);
+
+        trackEvent('search', { query: search.trim() });
 
         const response = await productService.getProducts({
           search: search.trim(),

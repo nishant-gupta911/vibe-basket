@@ -7,6 +7,7 @@ import { securityHeaders } from './common/middleware/security-headers.middleware
 import { rateLimit } from './common/middleware/rate-limit.middleware';
 import { sanitizeInput } from './common/middleware/sanitize.middleware';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { sessionTracker } from './common/middleware/session.middleware';
 
 async function bootstrap() {
   validateEnv();
@@ -15,6 +16,7 @@ async function bootstrap() {
   app.use(securityHeaders);
   app.use(rateLimit);
   app.use(sanitizeInput);
+  app.use(sessionTracker);
   app.use(requestLogger);
   app.useGlobalFilters(new HttpExceptionFilter());
 

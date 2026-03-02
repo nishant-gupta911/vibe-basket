@@ -6,5 +6,6 @@ import { PrismaService } from '../../config/prisma.service';
 @Module({
   controllers: [AnalyticsController],
   providers: [AnalyticsService, PrismaService],
+  exports: [AnalyticsService],
 })
 export class AnalyticsModule {}

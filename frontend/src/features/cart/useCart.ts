@@ -1,6 +1,7 @@
 import { useCartStore } from '@/state/cartStore';
 import { cartService, AddToCartData } from './cartService';
 import { useState } from 'react';
+import { trackEvent } from '@/lib/analytics';
 
 export const useCart = () => {
   const { cart, isLoading, setCart, setLoading, clearCart: clearCartStore } = useCartStore();
@@ -27,6 +28,7 @@ export const useCart = () => {
       setLoading(true);
       const response = await cartService.addToCart({ productId, quantity });
       setCart(response.data);
+      trackEvent('cart_add', { productId, quantity });
       return response;
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Failed to add to cart';

@@ -12,6 +12,6 @@ export class AnalyticsController {
 
   @Post()
   trackEvent(@Request() req, @Body() dto: TrackEventDto) {
-    return this.analyticsService.trackEvent(req.user?.userId || null, dto.event, dto.meta);
+    return this.analyticsService.trackEvent(req.user?.userId || null, req.sessionId || null, dto.event, dto.meta);
   }
 }

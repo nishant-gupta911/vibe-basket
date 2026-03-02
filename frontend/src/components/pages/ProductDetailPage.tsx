@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { AxiosError } from 'axios';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { trackEvent } from '@/lib/analytics';
 
 interface ProductDetailPageProps {
   id: string;
@@ -84,6 +85,8 @@ export default function ProductDetailPage({ id }: ProductDetailPageProps) {
         const response = await api.get<RawProduct>(`/products/${id}`);
         const normalizedProduct = normalizeProduct(response.data);
         setProduct(normalizedProduct);
+
+        trackEvent('product_view', { productId: normalizedProduct.id });
 
         const relatedResponse = await api.get<{ products: RawProduct[] }>(
           `/products?category=${encodeURIComponent(normalizedProduct.category)}&limit=5`,

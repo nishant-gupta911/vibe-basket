@@ -14,6 +14,7 @@ import { useScrollReveal } from '@/hooks/useScrollReveal';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { trackEvent } from '@/lib/analytics';
 
 interface ProductSuggestion {
   productId: string;
@@ -89,6 +90,8 @@ export default function MoodPagePremium() {
         mood,
         budget: budgetNum,
       };
+
+      trackEvent('mood_selection', { occasion, mood, budget: budgetNum });
 
       const response = await api.post('/ai/mood', payload);
 

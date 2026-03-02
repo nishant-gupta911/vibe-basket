@@ -105,6 +105,7 @@ model Review {
 model AnalyticsEvent {
   id        String   @id @default(uuid())
   userId    String?
+  sessionId String?
   event     String
   meta      Json?
   createdAt DateTime @default(now())
@@ -112,5 +113,6 @@ model AnalyticsEvent {
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([event])
+  @@index([sessionId])
   @@index([createdAt])
 }

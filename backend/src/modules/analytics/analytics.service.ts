@@ -5,12 +5,13 @@ import { PrismaService } from '../../config/prisma.service';
 export class AnalyticsService {
   constructor(private prisma: PrismaService) {}
 
-  async trackEvent(userId: string | null, event: string, meta?: Record<string, any>) {
+  async trackEvent(userId: string | null, sessionId: string | null, event: string, meta?: Record<string, any>) {
     const analyticsEvent = await this.prisma.analyticsEvent.create({
       data: {
         event,
         meta,
         userId: userId || undefined,
+        sessionId: sessionId || undefined,
       },
     });
 

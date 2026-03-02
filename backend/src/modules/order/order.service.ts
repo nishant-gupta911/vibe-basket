@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 @Injectable()
 export class OrderService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private analyticsService: AnalyticsService) {}
 
   async createOrder(userId: string) {
     const cart = await this.prisma.cart.findUnique({
@@ -52,6 +53,12 @@ export class OrderService {
         status: 'pending',
         items: orderItems,
       },
+    });
+
+    await this.analyticsService.trackEvent(userId, null, 'purchase', {
+      orderId: order.id,
+      total,
+      items: orderItems.map((item) => ({ productId: item.productId, quantity: item.quantity })),
     });
 
     // Clear cart
