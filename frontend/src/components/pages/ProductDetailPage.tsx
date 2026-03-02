@@ -10,13 +10,15 @@ import { PremiumImage } from '@/design-system/components/premium-image';
 import { Reveal, Slide, HoverLift, PressScale } from '@/design-system/components/motion';
 import { EmptyState, Skeleton } from '@/design-system/components/loading-states';
 import { RatingStars } from '@/components/products/RatingStars';
-import { ProductGrid } from '@/components/products/ProductGrid';
+import dynamic from 'next/dynamic';
 import { useCart } from '@/features/cart/useCart';
 import { useAuth } from '@/features/auth/useAuth';
 import { api } from '@/lib/api';
 import { Product } from '@/types';
 import { toast } from 'sonner';
 import { AxiosError } from 'axios';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface ProductDetailPageProps {
   id: string;
@@ -26,6 +28,14 @@ type RawProduct = Partial<Product> & {
   id?: string | number;
   title?: string;
 };
+
+interface ReviewItem {
+  id: string;
+  rating: number;
+  comment?: string | null;
+  createdAt: string;
+  user: { id: string; name: string };
+}
 
 const normalizeProduct = (product: RawProduct): Product => ({
   ...product,
@@ -38,13 +48,22 @@ const normalizeProduct = (product: RawProduct): Product => ({
   inStock: typeof product?.inStock === 'boolean' ? product.inStock : (product?.stock ?? 0) > 0,
 });
 
+const ProductGrid = dynamic(
+  () => import('@/components/products/ProductGrid').then((mod) => mod.ProductGrid),
+  { ssr: false },
+);
+
 export default function ProductDetailPage({ id }: ProductDetailPageProps) {
   const [quantity, setQuantity] = useState(1);
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [isLoadingProduct, setIsLoadingProduct] = useState(true);
   const [isNotFound, setIsNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reviewRating, setReviewRating] = useState<string>('5');
+  const [reviewComment, setReviewComment] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   const { addToCart, isLoading } = useCart();
   const { isAuthenticated } = useAuth();
@@ -75,6 +94,9 @@ export default function ProductDetailPage({ id }: ProductDetailPageProps) {
           .slice(0, 4);
 
         setRelatedProducts(nextRelated);
+
+        const reviewResponse = await api.get<ReviewItem[]>(`/products/${id}/reviews`);
+        setReviews(reviewResponse.data || []);
       } catch (fetchError: unknown) {
         const status = (fetchError as AxiosError)?.response?.status;
 
@@ -105,6 +127,34 @@ export default function ProductDetailPage({ id }: ProductDetailPageProps) {
       toast.success(`${quantity} × ${product.name} added to cart`);
     } catch {
       toast.error('Failed to add item to cart');
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!product) return;
+    if (!isAuthenticated) {
+      toast.error('Please log in to submit a review');
+      return;
+    }
+
+    try {
+      setIsSubmittingReview(true);
+      await api.post(`/products/${product.id}/reviews`, {
+        rating: Number(reviewRating),
+        comment: reviewComment.trim() || undefined,
+      });
+      const updatedProduct = await api.get<RawProduct>(`/products/${product.id}`);
+      setProduct(normalizeProduct(updatedProduct.data));
+      const updatedReviews = await api.get<ReviewItem[]>(`/products/${product.id}/reviews`);
+      setReviews(updatedReviews.data || []);
+      setReviewComment('');
+      setReviewRating('5');
+      toast.success('Review submitted');
+    } catch (submitError: any) {
+      const message = submitError?.response?.data?.message || 'Failed to submit review';
+      toast.error(message);
+    } finally {
+      setIsSubmittingReview(false);
     }
   };
 
@@ -331,6 +381,63 @@ export default function ProductDetailPage({ id }: ProductDetailPageProps) {
             </section>
           </Reveal>
         )}
+
+        <div className="mt-16 space-y-6">
+          <h2 className="text-2xl font-bold text-foreground">Reviews</h2>
+          <div className="grid gap-6">
+            <div className="bg-card border border-border rounded-2xl p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Write a review</h3>
+              <div className="grid gap-4">
+                <Select value={reviewRating} onValueChange={setReviewRating}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select rating" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 - Excellent</SelectItem>
+                    <SelectItem value="4">4 - Good</SelectItem>
+                    <SelectItem value="3">3 - Average</SelectItem>
+                    <SelectItem value="2">2 - Poor</SelectItem>
+                    <SelectItem value="1">1 - Terrible</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Textarea
+                  placeholder="Share your thoughts (optional)"
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                />
+                <PremiumButton
+                  variant="premium"
+                  onClick={handleSubmitReview}
+                  disabled={isSubmittingReview}
+                >
+                  Submit Review
+                </PremiumButton>
+              </div>
+            </div>
+
+            {reviews.length > 0 ? (
+              <div className="space-y-4">
+                {reviews.map((review) => (
+                  <div key={review.id} className="border border-border rounded-2xl p-4 bg-background">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-medium text-foreground">{review.user?.name || 'Customer'}</p>
+                      <RatingStars rating={review.rating} reviewCount={0} size="sm" />
+                    </div>
+                    {review.comment && (
+                      <p className="text-muted-foreground">{review.comment}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={ArrowLeft}
+                title="No reviews yet"
+                message="Be the first to review this product."
+              />
+            )}
+          </div>
+        </div>
       </div>
     </Layout>
   );

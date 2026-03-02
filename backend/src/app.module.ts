@@ -3,6 +3,10 @@ import { APP_PIPE } from '@nestjs/core';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { ProductModule } from './modules/product/product.module';
+import { WishlistModule } from './modules/wishlist/wishlist.module';
+import { ReviewModule } from './modules/review/review.module';
+import { HealthModule } from './modules/health/health.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { CartModule } from './modules/cart/cart.module';
 import { OrderModule } from './modules/order/order.module';
 import { AIModule } from './modules/ai/ai.module';
@@ -13,6 +17,10 @@ import { PrismaService } from './config/prisma.service';
     AuthModule,
     UserModule,
     ProductModule,
+    WishlistModule,
+    ReviewModule,
+    HealthModule,
+    AnalyticsModule,
     CartModule,
     OrderModule,
     AIModule,
