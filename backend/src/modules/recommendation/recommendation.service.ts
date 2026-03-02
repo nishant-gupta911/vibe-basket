@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { CacheService } from '../../common/cache/cache.service';
 
 @Injectable()
 export class RecommendationService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private cache: CacheService) {}
 
   async getRelatedProducts(productId: string, limit: number = 6) {
     const product = await this.prisma.product.findUnique({
@@ -30,11 +31,16 @@ export class RecommendationService {
   }
 
   async getTrendingProducts(limit: number = 6) {
-    return this.prisma.product.findMany({
+    const cacheKey = `trending:${limit}`;
+    const cached = this.cache.get<any[]>(cacheKey);
+    if (cached) return cached;
+    const products = await this.prisma.product.findMany({
       where: { inStock: true },
       orderBy: [{ popularity: 'desc' }, { rating: 'desc' }, { createdAt: 'desc' }],
       take: limit,
     });
+    this.cache.set(cacheKey, products, 60_000);
+    return products;
   }
 
   async getFrequentlyBoughtTogether(productId: string, limit: number = 4) {

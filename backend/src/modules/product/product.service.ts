@@ -1,13 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { CacheService } from '../../common/cache/cache.service';
 import { QueryProductDto, CreateProductDto, UpdateProductDto } from './dto/product.dto';
 
 @Injectable()
 export class ProductService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private cache: CacheService) {}
   private categoriesCache: { data: Array<{ name: string; count: number }>; expiresAt: number } | null = null;
 
   async getProducts(query: QueryProductDto) {
+    const cacheKey = `products:${JSON.stringify(query)}`;
+    const cached = this.cache.get<any>(cacheKey);
+    if (cached) return cached;
+
     const {
       search,
       category,
@@ -95,7 +100,7 @@ export class ProductService {
       this.prisma.product.count({ where }),
     ]);
 
-    return {
+    const response = {
       success: true,
       data: {
         products,
@@ -109,6 +114,8 @@ export class ProductService {
       },
       message: 'Products retrieved',
     };
+    this.cache.set(cacheKey, response, 60_000);
+    return response;
   }
 
   async getProduct(id: string) {
