@@ -18,6 +18,7 @@ model User {
   orders    Order[]
   payments  Payment[]
   redemptions CouponRedemption[]
+  vendor    Vendor?
   wishlists Wishlist[]
   reviews   Review[]
   events    AnalyticsEvent[]
@@ -26,6 +27,25 @@ model User {
   updatedAt DateTime @updatedAt
 
   @@index([role])
+}
+
+model Vendor {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  status         String   @default("PENDING")
+  commissionRate Float    @default(10)
+  payoutBalance  Float    @default(0)
+  verified       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products Product[]
+  payouts  VendorPayout[]
+  commissions OrderCommission[]
+
+  @@index([status])
+  @@index([verified])
 }
 
 model Product {
@@ -43,6 +63,8 @@ model Product {
   tags        String[]  @default([])
   reviews     Review[]
   wishlists   Wishlist[]
+  vendorId    String
+  vendor      Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -50,6 +72,7 @@ model Product {
   @@index([price])
   @@index([rating])
   @@index([popularity])
+  @@index([vendorId])
 }
 
 model Cart {
@@ -93,8 +116,43 @@ model Order {
   payments  Payment[]
   redemptions CouponRedemption[]
   invoice  Invoice?
+  commissions OrderCommission[]
 
   @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrderCommission {
+  id               String   @id @default(uuid())
+  orderId          String
+  vendorId         String
+  subtotal         Float
+  commissionRate   Float
+  commissionAmount Float
+  vendorAmount     Float
+  status           String   @default("PENDING")
+  createdAt        DateTime @default(now())
+
+  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([vendorId])
+  @@index([status])
+}
+
+model VendorPayout {
+  id        String   @id @default(uuid())
+  vendorId  String
+  amount    Float
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  paidAt    DateTime?
+
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId])
   @@index([status])
   @@index([createdAt])
 }

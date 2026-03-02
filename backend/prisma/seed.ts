@@ -10,6 +10,27 @@ async function main() {
   await prisma.product.deleteMany({});
 
   console.log('✅ Existing products cleared');
+  console.log('👤 Creating default vendor account...\n');
+
+  const vendorUser = await prisma.user.create({
+    data: {
+      name: 'Default Vendor',
+      email: 'vendor@vibebasket.local',
+      password: 'vendor-password',
+      role: 'vendor',
+    },
+  });
+
+  const vendor = await prisma.vendor.create({
+    data: {
+      userId: vendorUser.id,
+      status: 'APPROVED',
+      commissionRate: 12,
+      payoutBalance: 0,
+      verified: true,
+    },
+  });
+
   console.log('📦 Creating 100 new products...\n');
 
   // ============================================
@@ -25,6 +46,7 @@ async function main() {
       tags: ['casual', 'office', 'premium', 'confidence', 'formal'],
       image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf',
       inStock: true,
+      vendorId: vendor.id,
     },
     {
       title: 'Slim Fit Navy Blazer',
@@ -35,6 +57,7 @@ async function main() {
       tags: ['elegant', 'office', 'premium', 'party', 'confidence', 'slim-fit'],
       image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf',
       inStock: true,
+      vendorId: vendor.id,
     },
     {
       title: 'Relaxed Fit Denim Jeans',
@@ -45,6 +68,7 @@ async function main() {
       tags: ['casual', 'daily-use', 'comfort', 'relaxed-fit', 'budget'],
       image: 'https://images.unsplash.com/photo-1542272604-787c3835535d',
       inStock: true,
+      vendorId: vendor.id,
     },
     {
       title: 'Merino Wool Sweater - Charcoal',
@@ -55,6 +79,7 @@ async function main() {
       tags: ['premium', 'comfort', 'romantic', 'elegant', 'winter'],
       image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27',
       inStock: true,
+      vendorId: vendor.id,
     },
     {
       title: 'Performance Track Pants',
@@ -65,6 +90,7 @@ async function main() {
       tags: ['sporty', 'performance', 'gym', 'daily-use', 'comfort'],
       image: 'https://images.unsplash.com/photo-1506629082955-511b1aa562c8',
       inStock: true,
+      vendorId: vendor.id,
     },
     {
       title: 'Graphic Print T-Shirt - Black',
@@ -75,6 +101,7 @@ async function main() {
       tags: ['casual', 'college', 'trendy', 'budget', 'daily-use'],
       image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab',
       inStock: true,
+      vendorId: vendor.id,
     },
     {
       title: 'Premium Leather Jacket - Brown',
@@ -85,6 +112,7 @@ async function main() {
       tags: ['premium', 'leather', 'party', 'romantic', 'confidence', 'trendy'],
       image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5',
       inStock: true,
+      vendorId: vendor.id,
     },
     {
       title: 'Linen Summer Shirt - Sky Blue',
@@ -95,6 +123,7 @@ async function main() {
       tags: ['casual', 'comfort', 'travel', 'lightweight', 'summer'],
       image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c',
       inStock: true,
+      vendorId: vendor.id,
     },
     {
       title: 'Tailored Dress Pants - Grey',
@@ -105,6 +134,7 @@ async function main() {
       tags: ['office', 'formal', 'elegant', 'confidence', 'slim-fit'],
       image: 'https://images.unsplash.com/photo-1473966968600-fa801b869a1a',
       inStock: true,
+      vendorId: vendor.id,
     },
     {
       title: 'Hooded Sweatshirt - Heather Grey',
@@ -115,6 +145,7 @@ async function main() {
       tags: ['casual', 'comfort', 'college', 'budget', 'daily-use', 'relaxed-fit'],
       image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7',
       inStock: true,
+      vendorId: vendor.id,
     },
     {
       title: 'Compression Workout Shirt',
@@ -125,6 +156,7 @@ async function main() {
       tags: ['sporty', 'performance', 'gym', 'athletic', 'slim-fit'],
       image: 'https://images.unsplash.com/photo-1571731956672-f2b94d7dd0cb',
       inStock: true,
+      vendorId: vendor.id,
     },
     {
       title: 'Polo Shirt - Navy Stripe',
@@ -135,6 +167,7 @@ async function main() {
       tags: ['casual', 'office', 'comfort', 'daily-use'],
       image: 'https://images.unsplash.com/photo-1586790170083-2f9ceadc732d',
       inStock: true,
+      vendorId: vendor.id,
     },
     {
       title: 'Winter Parka Jacket - Olive',
@@ -145,6 +178,7 @@ async function main() {
       tags: ['winter', 'durability', 'travel', 'outdoor', 'comfort'],
       image: 'https://images.unsplash.com/photo-1544022613-e87ca75a784a',
       inStock: true,
+      vendorId: vendor.id,
     },
     {
       title: 'Chino Shorts - Khaki',
@@ -155,6 +189,7 @@ async function main() {
       tags: ['casual', 'summer', 'travel', 'comfort', 'budget'],
       image: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b',
       inStock: true,
+      vendorId: vendor.id,
     },
     {
       title: 'V-Neck Cotton Tee - White',
@@ -165,6 +200,7 @@ async function main() {
       tags: ['casual', 'daily-use', 'budget', 'comfort', 'basic'],
       image: 'https://images.unsplash.com/photo-1581655353564-df123a1eb820',
       inStock: true,
+      vendorId: vendor.id,
     },
   ];
 
@@ -181,6 +217,7 @@ async function main() {
       tags: ['elegant', 'romantic', 'party', 'premium', 'confidence'],
       image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8',
       inStock: true,
+      vendorId: vendor.id,
     },
     {
       title: 'Silk Blouse - Ivory',
@@ -1055,7 +1092,7 @@ async function main() {
   ];
 
   // Combine all products
-  const allProducts = [
+  const allProducts: Array<any> = [
     ...mensClothing,
     ...womensClothing,
     ...footwear,
@@ -1079,7 +1116,10 @@ async function main() {
   let count = 0;
   for (const product of allProducts) {
     await prisma.product.create({
-      data: product,
+      data: {
+        ...product,
+        vendorId: product.vendorId ?? vendor.id,
+      },
     });
     count++;
     if (count % 10 === 0) {

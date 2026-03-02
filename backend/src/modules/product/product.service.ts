@@ -164,6 +164,9 @@ export class ProductService {
   }
 
   async createProduct(dto: CreateProductDto) {
+    if (!dto.vendorId) {
+      throw new NotFoundException('Vendor not specified');
+    }
     const product = await this.prisma.product.create({
       data: {
         title: dto.title,
@@ -174,6 +177,7 @@ export class ProductService {
         inStock: dto.inStock ?? true,
         stock: dto.stock ?? 0,
         tags: dto.tags ?? [],
+        vendorId: dto.vendorId,
       },
     });
 
@@ -196,6 +200,7 @@ export class ProductService {
         inStock: dto.inStock,
         stock: dto.stock,
         tags: dto.tags,
+        vendorId: dto.vendorId,
       },
     });
 

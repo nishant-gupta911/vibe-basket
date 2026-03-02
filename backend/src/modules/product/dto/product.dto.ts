@@ -33,6 +33,10 @@ export class CreateProductDto {
   @IsOptional()
   @IsString({ each: true })
   tags?: string[];
+
+  @IsString()
+  @IsOptional()
+  vendorId?: string;
 }
 
 export class UpdateProductDto {
@@ -70,6 +74,10 @@ export class UpdateProductDto {
   @IsOptional()
   @IsString({ each: true })
   tags?: string[];
+
+  @IsString()
+  @IsOptional()
+  vendorId?: string;
 }
 
 export class QueryProductDto {
