@@ -38,8 +38,16 @@ export class ChatbotService {
    */
   async chat(message: string, conversationHistory: ChatMessage[] = []): Promise<ChatResponse> {
     try {
+      const memory = this.buildMemory(conversationHistory);
+
+      // Use memory to augment message context lightly (no sensitive data)
+      const memoryContext = memory
+        .filter((msg) => msg.role === 'user')
+        .map((msg) => msg.content)
+        .join(' | ');
+
       // Step 1: Classify user intent and extract context
-      const classified = classifyIntent(message);
+      const classified = classifyIntent(`${memoryContext} ${message}`.trim());
 
       // Step 2: Handle special cases immediately
       if (classified.intent === Intent.GREETING) {
@@ -150,5 +158,15 @@ export class ChatbotService {
     const top = selectTopProducts(ranked, 5);
 
     return top.map(p => p.product);
+  }
+
+  buildMemory(history: ChatMessage[] = []): ChatMessage[] {
+    const sanitized = history
+      .filter((msg) => msg && typeof msg.content === 'string')
+      .map((msg) => ({ role: msg.role, content: msg.content.trim() }))
+      .filter((msg) => msg.content.length > 0 && msg.content.length < 500);
+
+    if (sanitized.length <= 5) return sanitized;
+    return sanitized.slice(-5);
   }
 }

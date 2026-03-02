@@ -9,6 +9,7 @@ import { ProductCardPremium } from '@/components/products/ProductCardPremium';
 import { Reveal, Slide, StaggerContainer, Fade } from '@/design-system/components/motion';
 import { Spinner } from '@/design-system/components/loading-states';
 import { api } from '@/lib/api';
+import { useChatMemoryStore } from '@/state/chatMemoryStore';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +25,7 @@ export default function ChatPage() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { messages: memoryMessages, addMessage } = useChatMemoryStore();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -61,10 +63,7 @@ export default function ChatPage() {
     try {
       const response = await api.post('/ai/chat', {
         message: userMessage.content,
-        history: messages.slice(-6).map(m => ({
-          role: m.role,
-          content: m.content,
-        })),
+        history: memoryMessages,
       });
 
       if (response.success) {
@@ -83,6 +82,8 @@ export default function ChatPage() {
         };
 
         setMessages(prev => [...prev, assistantMessage]);
+        addMessage({ role: 'user', content: userMessage.content });
+        addMessage({ role: 'assistant', content: assistantMessage.content });
       } else {
         throw new Error(response.message);
       }
