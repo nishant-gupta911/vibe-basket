@@ -258,6 +258,7 @@ export class PaymentsService {
     }
 
     await this.invoiceService.generateInvoice(order.id);
+    await this.applyCommissions(order.id);
 
     return {
       success: true,
@@ -343,12 +344,67 @@ export class PaymentsService {
 
           if (status === 'PAID') {
             await this.invoiceService.generateInvoice(payment.orderId);
+            await this.applyCommissions(payment.orderId);
           }
         }
       }
     }
 
     return { success: true, data: { handled: true }, message: 'Webhook processed' };
+  }
+
+  private async applyCommissions(orderId: string) {
+    const existing = await this.prisma.orderCommission.findFirst({
+      where: { orderId },
+      select: { id: true },
+    });
+    if (existing) return;
+
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: { items: true },
+    });
+    if (!order) return;
+
+    const items = Array.isArray(order.items) ? (order.items as any[]) : [];
+    const vendorTotals = new Map<string, number>();
+    for (const item of items) {
+      if (!item.vendorId) continue;
+      const subtotal = (item.price || 0) * (item.quantity || 0);
+      vendorTotals.set(item.vendorId, (vendorTotals.get(item.vendorId) || 0) + subtotal);
+    }
+
+    if (vendorTotals.size === 0) return;
+
+    const vendors = await this.prisma.vendor.findMany({
+      where: { id: { in: Array.from(vendorTotals.keys()) } },
+      select: { id: true, commissionRate: true },
+    });
+    const vendorMap = new Map(vendors.map((v) => [v.id, v]));
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const [vendorId, subtotal] of vendorTotals.entries()) {
+        const vendor = vendorMap.get(vendorId);
+        if (!vendor) continue;
+        const commissionAmount = (subtotal * vendor.commissionRate) / 100;
+        const vendorAmount = subtotal - commissionAmount;
+        await tx.orderCommission.create({
+          data: {
+            orderId,
+            vendorId,
+            subtotal,
+            commissionRate: vendor.commissionRate,
+            commissionAmount,
+            vendorAmount,
+            status: 'PENDING',
+          },
+        });
+        await tx.vendor.update({
+          where: { id: vendorId },
+          data: { payoutBalance: { increment: vendorAmount } },
+        });
+      }
+    });
   }
 
   async refundPayment(orderId: string, amount?: number) {

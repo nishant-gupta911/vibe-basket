@@ -53,6 +53,7 @@ export class OrderService {
         productId: product.id,
         title: product.title,
         category: product.category,
+        vendorId: product.vendorId,
         price: product.price,
         quantity: item.quantity,
         subtotal: itemTotal,
