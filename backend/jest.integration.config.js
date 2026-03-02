@@ -14,5 +14,8 @@ module.exports = {
   moduleFileExtensions: ['ts', 'js', 'json'],
   moduleDirectories: ['node_modules', '<rootDir>/node_modules'],
   testTimeout: 60000,
+  // Run suites sequentially — they share a database and must not
+  // interfere with each other's seeded data.
+  maxWorkers: 1,
   setupFilesAfterEnv: ['<rootDir>/../tests/integration/setup.ts'],
 };

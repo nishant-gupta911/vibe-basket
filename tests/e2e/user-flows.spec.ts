@@ -17,7 +17,10 @@ test.describe('E-Commerce User Flows', () => {
 
   test('should filter products by category', async ({ page }) => {
     await page.goto('/products');
-    await page.getByRole('button', { name: 'Electronics', exact: true }).click();
+    // Wait for category buttons to load from API before clicking
+    const electronicsBtn = page.getByRole('button', { name: /electronics/i });
+    await electronicsBtn.waitFor({ state: 'visible', timeout: 15000 });
+    await electronicsBtn.click();
     await page.waitForTimeout(500);
     const productCount = await page.locator('a[href^="/products/"]').count();
     expect(productCount).toBeGreaterThanOrEqual(1);
@@ -46,8 +49,8 @@ test.describe('E-Commerce User Flows', () => {
     await page.getByLabel('Confirm Password').fill('TestPassword123!');
     await page.locator('label', { hasText: 'I agree to the Terms of Service and Privacy Policy' }).click();
     await page.getByRole('button', { name: 'Create Account' }).click();
-    await page.waitForTimeout(2000);
-    await expect(page).not.toHaveURL('/register');
+    // Wait for redirect away from /register (success → /profile)
+    await expect(page).not.toHaveURL(/\/register/, { timeout: 15000 });
   });
 
   test('should login existing user', async ({ page }) => {
@@ -62,12 +65,13 @@ test.describe('E-Commerce User Flows', () => {
     await page.getByLabel('Confirm Password').fill(password);
     await page.locator('label', { hasText: 'I agree to the Terms of Service and Privacy Policy' }).click();
     await page.getByRole('button', { name: 'Create Account' }).click();
+    // Wait for registration to finish before navigating
+    await expect(page).not.toHaveURL(/\/register/, { timeout: 15000 });
     await page.goto('/login');
     await page.getByLabel('Email').fill(email);
     await page.getByRole('textbox', { name: 'Password', exact: true }).fill(password);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForTimeout(2000);
-    await expect(page).not.toHaveURL('/login');
+    await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 });
   });
 
   test('should add product to cart', async ({ page }) => {

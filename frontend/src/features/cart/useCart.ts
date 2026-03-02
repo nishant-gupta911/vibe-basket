@@ -1,13 +1,13 @@
 import { useCartStore } from '@/state/cartStore';
 import { cartService, AddToCartData } from './cartService';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { trackEvent } from '@/lib/analytics';
 
 export const useCart = () => {
   const { cart, isLoading, setCart, setLoading, clearCart: clearCartStore } = useCartStore();
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCart = async () => {
+  const fetchCart = useCallback(async () => {
     try {
       setError(null);
       setLoading(true);
@@ -20,7 +20,7 @@ export const useCart = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setCart, setLoading]);
 
   const addToCart = async (productId: string, quantity: number = 1) => {
     try {

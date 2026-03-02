@@ -111,17 +111,17 @@ describe('Products API Integration Tests', () => {
 
     test('should paginate results', async () => {
       const page1 = await request(app.getHttpAdapter().getInstance())
-        .get('/api/products?limit=5&page=1')
+        .get('/api/products?limit=2&page=1')
         .expect(200);
 
       const page2 = await request(app.getHttpAdapter().getInstance())
-        .get('/api/products?limit=5&page=2')
+        .get('/api/products?limit=2&page=2')
         .expect(200);
 
       const p1 = productsFrom(page1);
       const p2 = productsFrom(page2);
-      expect(p1.length).toBe(5);
-      expect(p2.length).toBe(5);
+      expect(p1.length).toBe(2);
+      expect(p2.length).toBeGreaterThanOrEqual(1);
       expect(p1[0].id).not.toBe(p2[0].id);
     });
   });

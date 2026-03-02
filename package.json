@@ -15,7 +15,7 @@
     "test:integration": "bash scripts/test-integration.sh",
     "test:integration:run": "cd backend && npm run test:integration",
     "test:frontend": "cd frontend && npm test",
-    "test:e2e": "playwright test",
+    "test:e2e": "node scripts/run-e2e.js",
     "test:all": "npm run test && npm run test:e2e",
     "test:full": "npm run test:unit && npm run test:integration && npm run test:frontend && npm run test:e2e"
   },

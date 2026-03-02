@@ -154,9 +154,22 @@ describe('Auth API Integration Tests', () => {
 
   describe('GET /api/auth/profile', () => {
     test('should get user profile with valid token', async () => {
+      // Register a fresh user and use its token to avoid cross-describe
+      // timing / JWT-config issues.
+      const ts = Date.now();
+      const regRes = await request(app.getHttpAdapter().getInstance())
+        .post('/api/auth/register')
+        .send({
+          name: 'Profile Test User',
+          email: `profile-${ts}@example.com`,
+          password: 'Password123!',
+        })
+        .expect(201);
+      const freshToken = regRes.body.data.accessToken;
+
       const response = await request(app.getHttpAdapter().getInstance())
         .get('/api/auth/profile')
-        .set('Authorization', `Bearer ${authToken}`)
+        .set('Authorization', `Bearer ${freshToken}`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
