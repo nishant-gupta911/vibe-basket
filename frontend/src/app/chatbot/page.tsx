@@ -7,7 +7,7 @@ import { PremiumButton } from '@/design-system/components/premium-button';
 import { PremiumInput } from '@/design-system/components/premium-input';
 import { PremiumCard } from '@/design-system/components/premium-card';
 import { Fade, Slide, Scale, StaggerContainer, Reveal, HoverLift } from '@/design-system/components/motion';
-import { Spinner, ErrorState } from '@/design-system/components/loading-states';
+import { Skeleton, ErrorState } from '@/design-system/components/loading-states';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
 
@@ -218,9 +218,9 @@ export default function ChatbotPage() {
                       <Bot className="w-5 h-5 text-primary-foreground" />
                     </div>
                     <div className="bg-secondary/50 dark:bg-secondary/30 rounded-2xl rounded-tl-md px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <Spinner size="sm" />
-                        <span className="text-sm text-muted-foreground">Thinking...</span>
+                      <div className="space-y-2">
+                        <Skeleton variant="text" className="h-4 w-36" />
+                        <Skeleton variant="text" className="h-4 w-24" />
                       </div>
                     </div>
                   </div>

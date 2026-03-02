@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2 } from 'lucide-react';
+import { Send, Bot, User } from 'lucide-react';
 import { PremiumButton } from '@/design-system/components/premium-button';
 import { PremiumInput } from '@/design-system/components/premium-input';
 import { PremiumCard } from '@/design-system/components/premium-card';
 import { ProductCardPremium } from '@/components/products/ProductCardPremium';
 import { Reveal, Slide, StaggerContainer, Fade } from '@/design-system/components/motion';
-import { Spinner } from '@/design-system/components/loading-states';
+import { Skeleton } from '@/design-system/components/loading-states';
 import { api } from '@/lib/api';
 import { useChatMemoryStore } from '@/state/chatMemoryStore';
 import { toast } from 'sonner';
@@ -208,9 +208,9 @@ export default function ChatPage() {
                 <Bot className="w-5 h-5 text-primary-foreground" />
               </div>
               <div className="bg-secondary/50 dark:bg-secondary/30 rounded-2xl rounded-tl-md px-6 py-4">
-                <div className="flex items-center gap-3">
-                  <Spinner size="sm" />
-                  <span className="text-sm text-muted-foreground">Thinking...</span>
+                <div className="space-y-2">
+                  <Skeleton variant="text" className="h-4 w-40" />
+                  <Skeleton variant="text" className="h-4 w-24" />
                 </div>
               </div>
             </Fade>
@@ -240,11 +240,7 @@ export default function ChatPage() {
             size="lg"
             className="px-6"
           >
-            {isLoading ? (
-              <Spinner size="sm" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
+            <Send className="w-5 h-5" />
           </PremiumButton>
         </div>
       </Reveal>
