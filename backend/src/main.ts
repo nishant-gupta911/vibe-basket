@@ -2,12 +2,13 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { config, validateEnv } from './config/env';
-import { requestLogger } from './common/middleware/request-logger.middleware';
+import { createRequestLogger } from './common/middleware/request-logger.middleware';
 import { securityHeaders } from './common/middleware/security-headers.middleware';
 import { rateLimit } from './common/middleware/rate-limit.middleware';
 import { sanitizeInput } from './common/middleware/sanitize.middleware';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { sessionTracker } from './common/middleware/session.middleware';
+import { MetricsService } from './common/metrics/metrics.service';
 
 async function bootstrap() {
   validateEnv();
@@ -17,7 +18,7 @@ async function bootstrap() {
   app.use(rateLimit);
   app.use(sanitizeInput);
   app.use(sessionTracker);
-  app.use(requestLogger);
+  app.use(createRequestLogger(app.get(MetricsService)));
   app.useGlobalFilters(new HttpExceptionFilter());
 
   // Enable CORS for frontend

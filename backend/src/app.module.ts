@@ -16,10 +16,12 @@ import { PrismaService } from './config/prisma.service';
 import { JobsModule } from './modules/jobs/jobs.module';
 import { CacheModule } from './common/cache/cache.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { MetricsModule } from './common/metrics/metrics.module';
 
 @Module({
   imports: [
     CacheModule,
+    MetricsModule,
     AuthModule,
     UserModule,
     ProductModule,
