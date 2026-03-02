@@ -21,6 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { trackEvent } from '@/lib/analytics';
 import { productService } from '@/features/products/productService';
+import { recommendationService } from '@/features/recommendations/recommendationService';
 
 interface ProductDetailPageProps {
   id: string;
@@ -59,6 +60,7 @@ export default function ProductDetailPage({ id }: ProductDetailPageProps) {
   const [quantity, setQuantity] = useState(1);
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [frequentlyBought, setFrequentlyBought] = useState<Product[]>([]);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [isLoadingProduct, setIsLoadingProduct] = useState(true);
   const [isNotFound, setIsNotFound] = useState(false);
@@ -89,13 +91,17 @@ export default function ProductDetailPage({ id }: ProductDetailPageProps) {
 
         trackEvent('product_view', { productId: normalizedProduct.id });
 
-        const relatedResponse = await productService.getPersonalizedProducts(5, normalizedProduct.category);
+        const relatedResponse = await recommendationService.related(normalizedProduct.id, 5);
         const nextRelated = (relatedResponse.data?.products || [])
           .map(normalizeProduct)
           .filter((candidate: Product) => candidate.id !== normalizedProduct.id)
           .slice(0, 4);
 
         setRelatedProducts(nextRelated);
+
+        const frequentResponse = await recommendationService.frequentlyBought(normalizedProduct.id, 4);
+        const frequent = (frequentResponse.data?.products || []).map(normalizeProduct);
+        setFrequentlyBought(frequent);
 
         const reviewResponse = await api.get<ReviewItem[]>(`/products/${id}/reviews`);
         setReviews(reviewResponse.data || []);
@@ -380,6 +386,15 @@ export default function ProductDetailPage({ id }: ProductDetailPageProps) {
             <section>
               <h2 className="text-2xl font-bold text-foreground mb-6">You might also like</h2>
               <ProductGrid products={relatedProducts} />
+            </section>
+          </Reveal>
+        )}
+
+        {frequentlyBought.length > 0 && (
+          <Reveal delay={0.35}>
+            <section className="mt-12">
+              <h2 className="text-2xl font-bold text-foreground mb-6">Frequently bought together</h2>
+              <ProductGrid products={frequentlyBought} />
             </section>
           </Reveal>
         )}

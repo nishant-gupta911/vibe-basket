@@ -6,12 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Layout } from '@/components/layout/Layout';
 import { ProductCardPremium } from '@/components/products/ProductCardPremium';
 import { productService, Product } from '@/features/products/productService';
+import { recommendationService } from '@/features/recommendations/recommendationService';
 import { useScrollReveal, useStaggerReveal } from '@/hooks/useScrollReveal';
 import { useEffect, useRef, useState } from 'react';
+import { ProductGrid } from '@/components/products/ProductGrid';
 
 export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
+  const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Array<{ name: string; count: number }>>([]);
 
   // Scroll refs for animations
@@ -26,15 +29,19 @@ export default function HomePage() {
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        const [personalizedResponse, categoriesResponse] = await Promise.all([
+        const [personalizedResponse, categoriesResponse, trendingResponse, recentlyViewedResponse] = await Promise.all([
           productService.getPersonalizedProducts(12),
           productService.getCategories(),
+          recommendationService.trending(6),
+          recommendationService.recentlyViewed(6),
         ]);
 
         const fetchedProducts = personalizedResponse.data.products || [];
+        const trending = trendingResponse.data.products || [];
         setFeaturedProducts(fetchedProducts.slice(0, 4));
-        setTrendingProducts(fetchedProducts.slice(0, 6));
+        setTrendingProducts(trending.length > 0 ? trending : fetchedProducts.slice(0, 6));
         setCategories(categoriesResponse.data || []);
+        setRecentlyViewed(recentlyViewedResponse.data.products || []);
       } catch {
         setFeaturedProducts([]);
         setTrendingProducts([]);
@@ -389,6 +396,19 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ==================== RECENTLY VIEWED ==================== */}
+      {recentlyViewed.length > 0 && (
+        <section className="section-padding bg-secondary/30">
+          <div className="container mx-auto px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <p className="text-premium-xs text-muted-foreground mb-3">Just For You</p>
+              <h2 className="font-display text-4xl md:text-5xl text-foreground">Recently Viewed</h2>
+            </div>
+            <ProductGrid products={recentlyViewed} />
+          </div>
+        </section>
+      )}
 
       {/* ==================== CATEGORIES SHOWCASE ==================== */}
       <section className="py-20 bg-foreground text-background">
