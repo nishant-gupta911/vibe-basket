@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { QueryProductDto } from './dto/product.dto';
+import { QueryProductDto, CreateProductDto, UpdateProductDto } from './dto/product.dto';
 
 @Injectable()
 export class ProductService {
   constructor(private prisma: PrismaService) {}
+  private categoriesCache: { data: Array<{ name: string; count: number }>; expiresAt: number } | null = null;
 
   async getProducts(query: QueryProductDto) {
     const {
@@ -127,18 +128,84 @@ export class ProductService {
   }
 
   async getCategories() {
+    const now = Date.now();
+    if (this.categoriesCache && this.categoriesCache.expiresAt > now) {
+      return {
+        success: true,
+        data: this.categoriesCache.data,
+        message: 'Categories retrieved',
+      };
+    }
+
     const grouped = await this.prisma.product.groupBy({
       by: ['category'],
       _count: { _all: true },
     });
 
+    const data = grouped.map((c) => ({
+      name: c.category,
+      count: c._count._all,
+    }));
+
+    this.categoriesCache = { data, expiresAt: now + 60_000 };
+
     return {
       success: true,
-      data: grouped.map((c) => ({
-        name: c.category,
-        count: c._count._all,
-      })),
+      data,
       message: 'Categories retrieved',
+    };
+  }
+
+  async createProduct(dto: CreateProductDto) {
+    const product = await this.prisma.product.create({
+      data: {
+        title: dto.title,
+        description: dto.description,
+        category: dto.category,
+        price: dto.price,
+        image: dto.image,
+        inStock: dto.inStock ?? true,
+        stock: dto.stock ?? 0,
+        tags: dto.tags ?? [],
+      },
+    });
+
+    return {
+      success: true,
+      data: product,
+      message: 'Product created',
+    };
+  }
+
+  async updateProduct(id: string, dto: UpdateProductDto) {
+    const product = await this.prisma.product.update({
+      where: { id },
+      data: {
+        title: dto.title,
+        description: dto.description,
+        category: dto.category,
+        price: dto.price,
+        image: dto.image,
+        inStock: dto.inStock,
+        stock: dto.stock,
+        tags: dto.tags,
+      },
+    });
+
+    return {
+      success: true,
+      data: product,
+      message: 'Product updated',
+    };
+  }
+
+  async deleteProduct(id: string) {
+    await this.prisma.product.delete({ where: { id } });
+
+    return {
+      success: true,
+      data: { id },
+      message: 'Product deleted',
     };
   }
 }

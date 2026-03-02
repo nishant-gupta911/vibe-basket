@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsBoolean, Min, Max, IsIn } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsBoolean, Min, Max, IsIn, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateProductDto {
@@ -23,6 +23,53 @@ export class CreateProductDto {
   @IsBoolean()
   @IsOptional()
   inStock?: boolean;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  stock?: number;
+
+  @IsArray()
+  @IsOptional()
+  @IsString({ each: true })
+  tags?: string[];
+}
+
+export class UpdateProductDto {
+  @IsString()
+  @IsOptional()
+  title?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsString()
+  @IsOptional()
+  category?: string;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  price?: number;
+
+  @IsString()
+  @IsOptional()
+  image?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  inStock?: boolean;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  stock?: number;
+
+  @IsArray()
+  @IsOptional()
+  @IsString({ each: true })
+  tags?: string[];
 }
 
 export class QueryProductDto {
