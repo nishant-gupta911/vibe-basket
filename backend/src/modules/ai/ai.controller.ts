@@ -4,6 +4,7 @@ import { RecommendationService, MoodRequest } from './recommendation.service';
 import { PrismaService } from '../../config/prisma.service';
 import { PersonalizationService } from '../personalization/personalization.service';
 import { embeddingService } from './embedding.service';
+import { logger } from '../../common/utils/logger';
 
 @Controller('ai')
 export class AIController {
@@ -32,14 +33,14 @@ export class AIController {
         message: 'OK'
       };
     } catch (error) {
-      console.error('Chat error:', error);
+      logger.log('error', 'ai_chat_error', { message: (error as Error)?.message || String(error) });
       return {
         success: false,
         data: {
           reply: "I'm having trouble right now. Please try again in a moment.",
           productIds: null,
         },
-        message: error.message || 'Failed to process chat message'
+        message: 'Failed to process chat message'
       };
     }
   }
@@ -67,11 +68,11 @@ export class AIController {
         message: 'OK'
       };
     } catch (error) {
-      console.error('Mood recommendation error:', error);
+      logger.log('error', 'ai_mood_error', { message: (error as Error)?.message || String(error) });
       return {
         success: false,
         data: { suggestions: [] },
-        message: error.message || 'Failed to generate recommendations'
+        message: 'Failed to generate recommendations'
       };
     }
   }
@@ -152,7 +153,7 @@ export class AIController {
           : 'Products processed, but embedding column is not available in schema',
       };
     } catch (error) {
-      console.error('Embedding error:', error);
+      logger.log('error', 'ai_embedding_error', { message: (error as Error)?.message || String(error) });
       throw new HttpException('Failed to embed products', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
