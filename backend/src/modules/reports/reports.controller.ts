@@ -11,4 +11,9 @@ export class ReportsController {
   revenue() {
     return this.reportsService.getRevenueSummary();
   }
+
+  @Get('marketplace')
+  marketplace() {
+    return this.reportsService.getMarketplaceRevenue();
+  }
 }

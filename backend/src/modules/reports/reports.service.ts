@@ -69,4 +69,36 @@ export class ReportsService {
       message: 'Revenue report generated',
     };
   }
+
+  async getMarketplaceRevenue() {
+    const commissions = await this.prisma.orderCommission.aggregate({
+      _sum: { commissionAmount: true, vendorAmount: true },
+      _count: { _all: true },
+    });
+
+    const payoutsPaid = await this.prisma.vendorPayout.aggregate({
+      _sum: { amount: true },
+      _count: { _all: true },
+      where: { status: 'PAID' },
+    });
+
+    const payoutsPending = await this.prisma.vendorPayout.aggregate({
+      _sum: { amount: true },
+      _count: { _all: true },
+      where: { status: 'PENDING' },
+    });
+
+    return {
+      success: true,
+      data: {
+        totalPlatformRevenue: commissions._sum.commissionAmount || 0,
+        totalVendorEarnings: commissions._sum.vendorAmount || 0,
+        commissionCount: commissions._count._all,
+        totalVendorPayouts: payoutsPaid._sum.amount || 0,
+        pendingPayouts: payoutsPending._sum.amount || 0,
+        payoutCount: payoutsPaid._count._all,
+      },
+      message: 'Marketplace revenue report',
+    };
+  }
 }
