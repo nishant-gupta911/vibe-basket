@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/features/cart/useCart';
 import { Product } from '@/types';
 import { toast } from 'sonner';
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useWishlist } from '@/features/wishlist/useWishlist';
 import { useAuth } from '@/features/auth/useAuth';
@@ -17,7 +17,7 @@ interface ProductCardPremiumProps {
   variant?: 'default' | 'large' | 'minimal';
 }
 
-export function ProductCardPremium({ product, variant = 'default' }: ProductCardPremiumProps) {
+const ProductCardPremiumComponent = ({ product, variant = 'default' }: ProductCardPremiumProps) => {
   const { addToCart, isLoading } = useCart();
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -305,4 +305,6 @@ export function ProductCardPremium({ product, variant = 'default' }: ProductCard
       </div>
     </Link>
   );
-}
+};
+
+export const ProductCardPremium = memo(ProductCardPremiumComponent);
