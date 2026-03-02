@@ -7,6 +7,9 @@ export class RecommendationService {
   constructor(private prisma: PrismaService, private cache: CacheService) {}
 
   async getRelatedProducts(productId: string, limit: number = 6) {
+    const cacheKey = `related:${productId}:${limit}`;
+    const cached = this.cache.get<any[]>(cacheKey);
+    if (cached) return cached;
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
       select: { category: true, tags: true },
@@ -27,7 +30,9 @@ export class RecommendationService {
       orderBy: [{ popularity: 'desc' }, { rating: 'desc' }],
     });
 
-    return related.slice(0, limit);
+    const result = related.slice(0, limit);
+    this.cache.set(cacheKey, result, 10 * 60_000);
+    return result;
   }
 
   async getTrendingProducts(limit: number = 6) {
@@ -44,6 +49,9 @@ export class RecommendationService {
   }
 
   async getFrequentlyBoughtTogether(productId: string, limit: number = 4) {
+    const cacheKey = `fbt:${productId}:${limit}`;
+    const cached = this.cache.get<any[]>(cacheKey);
+    if (cached) return cached;
     const orders = await this.prisma.order.findMany({
       where: {
         items: {
@@ -73,7 +81,9 @@ export class RecommendationService {
       where: { id: { in: sortedIds } },
     });
 
-    return sortedIds.map((id) => products.find((p) => p.id === id)).filter(Boolean);
+    const result = sortedIds.map((id) => products.find((p) => p.id === id)).filter(Boolean);
+    this.cache.set(cacheKey, result, 10 * 60_000);
+    return result;
   }
 
   async getRecentlyViewed(userId?: string | null, sessionId?: string | null, limit: number = 6) {

@@ -13,9 +13,12 @@ import { CartModule } from './modules/cart/cart.module';
 import { OrderModule } from './modules/order/order.module';
 import { AIModule } from './modules/ai/ai.module';
 import { PrismaService } from './config/prisma.service';
+import { JobsModule } from './modules/jobs/jobs.module';
+import { CacheModule } from './common/cache/cache.module';
 
 @Module({
   imports: [
+    CacheModule,
     AuthModule,
     UserModule,
     ProductModule,
@@ -28,6 +31,7 @@ import { PrismaService } from './config/prisma.service';
     CartModule,
     OrderModule,
     AIModule,
+    JobsModule,
   ],
   providers: [
     PrismaService,
