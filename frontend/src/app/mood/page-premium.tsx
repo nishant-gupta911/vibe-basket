@@ -331,7 +331,6 @@ export default function MoodPagePremium() {
                               price: suggestion.product.price,
                               image: suggestion.product.image,
                               category: suggestion.product.category,
-                              categorySlug: suggestion.product.category.toLowerCase().replace(/\s+/g, '-'),
                             }}
                           />
                           <p className="mt-3 text-sm text-muted-foreground italic">

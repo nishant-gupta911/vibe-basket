@@ -1,7 +1,6 @@
 import { api } from '@/lib/api';
 import { Product } from '@/types';
 
-// Re-export Product for convenience
 export type { Product } from '@/types';
 
 export interface ProductsResponse {
@@ -29,64 +28,55 @@ export interface ProductQuery {
   maxPrice?: number;
 }
 
+type RawProduct = Partial<Product> & {
+  id?: string | number;
+  title?: string;
+};
+
+const normalizeProduct = (product: RawProduct): Product => ({
+  ...product,
+  id: String(product?.id ?? ''),
+  name: product?.name || product?.title || 'Untitled Product',
+  description: product?.description || '',
+  image: product?.image || '/placeholder.svg',
+  category: product?.category || 'uncategorized',
+  stock: typeof product?.stock === 'number' ? product.stock : 0,
+  inStock: typeof product?.inStock === 'boolean' ? product.inStock : (product?.stock ?? 0) > 0,
+});
+
 export const productService = {
   getProducts: async (query: ProductQuery = {}) => {
     const params = new URLSearchParams();
+
     if (query.page) params.append('page', query.page.toString());
     if (query.limit) params.append('limit', query.limit.toString());
     if (query.category) params.append('category', query.category);
     if (query.search) params.append('search', query.search);
-    if (query.minPrice) params.append('minPrice', query.minPrice.toString());
-    if (query.maxPrice) params.append('maxPrice', query.maxPrice.toString());
+    if (typeof query.minPrice === 'number') params.append('minPrice', query.minPrice.toString());
+    if (typeof query.maxPrice === 'number') params.append('maxPrice', query.maxPrice.toString());
 
-    const response = await api.get<{
-      products: Array<any>;
-      pagination: ProductsResponse['pagination'];
-    }>(`/products?${params.toString()}`);
-
-    const normalizedProducts = (response.data.products || []).map((product) => ({
-      ...product,
-      name: product.name || product.title || 'Untitled Product',
-      description: product.description || '',
-      image: product.image || '/placeholder.svg',
-      category: product.category || 'uncategorized',
-      stock: typeof product.stock === 'number' ? product.stock : 0,
-      inStock: typeof product.inStock === 'boolean' ? product.inStock : product.stock > 0,
-    })) as Product[];
+    const suffix = params.toString();
+    const response = await api.get<ProductsResponse>(suffix ? `/products?${suffix}` : '/products');
 
     return {
       ...response,
       data: {
-        products: normalizedProducts,
-        pagination: response.data.pagination,
+        products: (response.data?.products || []).map(normalizeProduct),
+        pagination: response.data?.pagination,
       },
     };
   },
 
   getProduct: async (id: string | number) => {
-    const response = await api.get<any>(`/products/${id}`);
-    const product = response.data;
+    const response = await api.get<Product>(`/products/${id}`);
+
     return {
       ...response,
-      data: {
-        ...product,
-        name: product?.name || product?.title || 'Untitled Product',
-        description: product?.description || '',
-        image: product?.image || '/placeholder.svg',
-        category: product?.category || 'uncategorized',
-        stock: typeof product?.stock === 'number' ? product.stock : 0,
-        inStock: typeof product?.inStock === 'boolean' ? product.inStock : product?.stock > 0,
-      } as Product,
+      data: normalizeProduct(response.data),
     };
   },
 
   getCategories: async () => {
-    const response = await api.get<CategoryResponseItem[]>('/products/categories');
-    return response;
-  },
-
-  searchProducts: async (query: string) => {
-    const response = await api.get<ProductsResponse>(`/products/search?search=${encodeURIComponent(query)}`);
-    return response;
+    return api.get<CategoryResponseItem[]>('/products/categories');
   },
 };

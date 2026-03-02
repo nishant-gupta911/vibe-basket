@@ -2,32 +2,131 @@
 
 import Link from 'next/link';
 import { ArrowLeft, Minus, Plus, ShoppingCart, Heart, Share2, Check, Truck } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { PremiumButton } from '@/design-system/components/premium-button';
 import { PremiumCard } from '@/design-system/components/premium-card';
 import { PremiumImage } from '@/design-system/components/premium-image';
-import { Reveal, Slide, Scale, HoverLift, PressScale } from '@/design-system/components/motion';
-import { EmptyState } from '@/design-system/components/loading-states';
+import { Reveal, Slide, HoverLift, PressScale } from '@/design-system/components/motion';
+import { EmptyState, Skeleton } from '@/design-system/components/loading-states';
 import { RatingStars } from '@/components/products/RatingStars';
 import { ProductGrid } from '@/components/products/ProductGrid';
-import { products } from '@/data/products';
 import { useCart } from '@/features/cart/useCart';
 import { useAuth } from '@/features/auth/useAuth';
+import { api } from '@/lib/api';
+import { Product } from '@/types';
 import { toast } from 'sonner';
+import { AxiosError } from 'axios';
 
 interface ProductDetailPageProps {
   id: string;
 }
 
+type RawProduct = Partial<Product> & {
+  id?: string | number;
+  title?: string;
+};
+
+const normalizeProduct = (product: RawProduct): Product => ({
+  ...product,
+  id: String(product?.id ?? ''),
+  name: product?.name || product?.title || 'Untitled Product',
+  description: product?.description || '',
+  image: product?.image || '/placeholder.svg',
+  category: product?.category || 'uncategorized',
+  stock: typeof product?.stock === 'number' ? product.stock : 0,
+  inStock: typeof product?.inStock === 'boolean' ? product.inStock : (product?.stock ?? 0) > 0,
+});
+
 export default function ProductDetailPage({ id }: ProductDetailPageProps) {
   const [quantity, setQuantity] = useState(1);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [isLoadingProduct, setIsLoadingProduct] = useState(true);
+  const [isNotFound, setIsNotFound] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const { addToCart, isLoading } = useCart();
   const { isAuthenticated } = useAuth();
 
-  const product = products.find((p) => p.id === id);
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!id) {
+        setIsNotFound(true);
+        setIsLoadingProduct(false);
+        return;
+      }
 
-  if (!product) {
+      try {
+        setIsLoadingProduct(true);
+        setError(null);
+        setIsNotFound(false);
+
+        const response = await api.get<RawProduct>(`/products/${id}`);
+        const normalizedProduct = normalizeProduct(response.data);
+        setProduct(normalizedProduct);
+
+        const relatedResponse = await api.get<{ products: RawProduct[] }>(
+          `/products?category=${encodeURIComponent(normalizedProduct.category)}&limit=5`,
+        );
+        const nextRelated = (relatedResponse.data?.products || [])
+          .map(normalizeProduct)
+          .filter((candidate: Product) => candidate.id !== normalizedProduct.id)
+          .slice(0, 4);
+
+        setRelatedProducts(nextRelated);
+      } catch (fetchError: unknown) {
+        const status = (fetchError as AxiosError)?.response?.status;
+
+        if (status === 404) {
+          setIsNotFound(true);
+          setProduct(null);
+        } else {
+          setError('Failed to load product. Please try again.');
+        }
+      } finally {
+        setIsLoadingProduct(false);
+      }
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+
+    if (!isAuthenticated) {
+      toast.error('Please log in to add items to cart');
+      return;
+    }
+
+    try {
+      await addToCart(product.id, quantity);
+      toast.success(`${quantity} × ${product.name} added to cart`);
+    } catch {
+      toast.error('Failed to add item to cart');
+    }
+  };
+
+  if (isLoadingProduct) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="grid lg:grid-cols-2 gap-12">
+            <Skeleton variant="rect" className="aspect-square rounded-2xl" />
+            <div className="space-y-4">
+              <Skeleton variant="text" className="h-6 w-1/3" />
+              <Skeleton variant="text" className="h-10 w-2/3" />
+              <Skeleton variant="text" className="h-6 w-1/4" />
+              <Skeleton variant="text" lines={4} />
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (isNotFound) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-16">
@@ -38,7 +137,9 @@ export default function ProductDetailPage({ id }: ProductDetailPageProps) {
               message="The product you're looking for doesn't exist or has been removed."
               action={{
                 label: 'Back to Products',
-                onClick: () => window.location.href = '/products',
+                onClick: () => {
+                  window.location.href = '/products';
+                },
               }}
             />
           </Reveal>
@@ -47,41 +148,42 @@ export default function ProductDetailPage({ id }: ProductDetailPageProps) {
     );
   }
 
-  const relatedProducts = products
-    .filter((p) => p.categorySlug === product.categorySlug && p.id !== product.id)
-    .slice(0, 4);
+  if (error || !product) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-16">
+          <Reveal>
+            <EmptyState
+              icon={ArrowLeft}
+              title="Unable to load product"
+              message={error || 'An unexpected error occurred.'}
+              action={{
+                label: 'Back to Products',
+                onClick: () => {
+                  window.location.href = '/products';
+                },
+              }}
+            />
+          </Reveal>
+        </div>
+      </Layout>
+    );
+  }
 
   const discountPercent = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
-  const handleAddToCart = async () => {
-    if (!isAuthenticated) {
-      toast.error('Please log in to add items to cart');
-      return;
-    }
-    
-    try {
-      // The API expects productId, but our local data uses string IDs
-      // We'll call addToCart for the quantity specified
-      await addToCart(id, quantity);
-      toast.success(`${quantity} × ${product.name} added to cart`);
-    } catch {
-      toast.error('Failed to add item to cart');
-    }
-  };
-
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
         <Reveal>
           <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
             <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
             <span>/</span>
             <Link href="/products" className="hover:text-foreground transition-colors">Products</Link>
             <span>/</span>
-            <Link href={`/categories/${product.categorySlug}`} className="hover:text-foreground transition-colors">
+            <Link href={`/categories/${encodeURIComponent(product.category)}`} className="hover:text-foreground transition-colors">
               {product.category}
             </Link>
             <span>/</span>
@@ -89,9 +191,7 @@ export default function ProductDetailPage({ id }: ProductDetailPageProps) {
           </nav>
         </Reveal>
 
-        {/* Product Details */}
         <div className="grid lg:grid-cols-2 gap-12 mb-16">
-          {/* Image */}
           <Slide direction="left">
             <div className="relative">
               <PremiumCard variant="glass" className="aspect-square rounded-2xl overflow-hidden">
@@ -106,12 +206,8 @@ export default function ProductDetailPage({ id }: ProductDetailPageProps) {
               </PremiumCard>
               {product.badge && (
                 <div className="absolute top-4 left-4 z-10">
-                  {product.badge === 'sale' && (
-                    <span className="badge-sale text-sm">-{discountPercent}% OFF</span>
-                  )}
-                  {product.badge === 'new' && (
-                    <span className="badge-new text-sm">New Arrival</span>
-                  )}
+                  {product.badge === 'sale' && <span className="badge-sale text-sm">-{discountPercent}% OFF</span>}
+                  {product.badge === 'new' && <span className="badge-new text-sm">New Arrival</span>}
                   {product.badge === 'bestseller' && (
                     <span className="bg-primary text-primary-foreground text-sm font-semibold px-3 py-1 rounded-full">
                       Bestseller
@@ -122,133 +218,115 @@ export default function ProductDetailPage({ id }: ProductDetailPageProps) {
             </div>
           </Slide>
 
-          {/* Info */}
           <Slide direction="right">
             <div className="flex flex-col">
               <div className="mb-4">
-                <Link
-                  href={`/categories/${product.categorySlug}`}
-                  className="text-sm text-primary font-medium hover:underline"
-                >
+                <Link href={`/categories/${encodeURIComponent(product.category)}`} className="text-sm text-primary font-medium hover:underline">
                   {product.category}
                 </Link>
               </div>
 
-              <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                {product.name}
-            </h1>
+              <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">{product.name}</h1>
 
-            <div className="flex items-center gap-4 mb-6">
-              <RatingStars rating={product.rating} reviewCount={product.reviewCount} size="lg" />
-            </div>
-
-            <div className="flex items-baseline gap-3 mb-6">
-              <span className="text-3xl font-bold text-foreground">
-                ${product.price.toFixed(2)}
-              </span>
-              {product.originalPrice && (
-                <>
-                  <span className="text-xl text-muted-foreground line-through">
-                    ${product.originalPrice.toFixed(2)}
-                  </span>
-                  <span className="text-sm font-medium text-destructive">
-                    Save ${(product.originalPrice - product.price).toFixed(2)}
-                  </span>
-                </>
-              )}
-            </div>
-
-            <p className="text-muted-foreground leading-relaxed mb-8">
-              {product.description}
-            </p>
-
-            {/* Stock Status */}
-            <div className="flex items-center gap-2 mb-6">
-              {product.inStock ? (
-                <>
-                  <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-sm font-medium text-green-600 dark:text-green-400">In Stock</span>
-                </>
-              ) : (
-                <>
-                  <div className="w-3 h-3 rounded-full bg-red-500" />
-                  <span className="text-sm font-medium text-red-600 dark:text-red-400">Out of Stock</span>
-                </>
-              )}
-            </div>
-
-            {/* Quantity & Add to Cart */}
-            <div className="flex flex-wrap items-center gap-4 mb-8">
-              <div className="flex items-center border border-border rounded-xl overflow-hidden">
-                <PressScale>
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="h-11 w-11 flex items-center justify-center hover:bg-secondary transition-colors"
-                  >
-                    <Minus size={16} />
-                  </button>
-                </PressScale>
-                <span className="w-12 text-center font-medium">{quantity}</span>
-                <PressScale>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="h-11 w-11 flex items-center justify-center hover:bg-secondary transition-colors"
-                  >
-                    <Plus size={16} />
-                  </button>
-                </PressScale>
+              <div className="flex items-center gap-4 mb-6">
+                <RatingStars rating={product.rating || 0} reviewCount={product.reviewCount || 0} size="lg" />
               </div>
 
-              <PremiumButton
-                size="lg"
-                variant="premium"
-                className="flex-1 gap-2 min-w-[200px]"
-                onClick={handleAddToCart}
-                disabled={!product.inStock}
-              >
-                <ShoppingCart size={18} />
-                Add to Cart
-              </PremiumButton>
+              <div className="flex items-baseline gap-3 mb-6">
+                <span className="text-3xl font-bold text-foreground">${product.price.toFixed(2)}</span>
+                {product.originalPrice && (
+                  <>
+                    <span className="text-xl text-muted-foreground line-through">${product.originalPrice.toFixed(2)}</span>
+                    <span className="text-sm font-medium text-destructive">
+                      Save ${(product.originalPrice - product.price).toFixed(2)}
+                    </span>
+                  </>
+                )}
+              </div>
 
-              <HoverLift>
-                <PremiumButton variant="outline" size="icon" className="h-11 w-11">
-                  <Heart size={18} />
+              <p className="text-muted-foreground leading-relaxed mb-8">{product.description}</p>
+
+              <div className="flex items-center gap-2 mb-6">
+                {product.inStock ? (
+                  <>
+                    <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-sm font-medium text-green-600 dark:text-green-400">In Stock</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    <span className="text-sm font-medium text-red-600 dark:text-red-400">Out of Stock</span>
+                  </>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4 mb-8">
+                <div className="flex items-center border border-border rounded-xl overflow-hidden">
+                  <PressScale>
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="h-11 w-11 flex items-center justify-center hover:bg-secondary transition-colors"
+                    >
+                      <Minus size={16} />
+                    </button>
+                  </PressScale>
+                  <span className="w-12 text-center font-medium">{quantity}</span>
+                  <PressScale>
+                    <button
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="h-11 w-11 flex items-center justify-center hover:bg-secondary transition-colors"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </PressScale>
+                </div>
+
+                <PremiumButton
+                  size="lg"
+                  variant="premium"
+                  className="flex-1 gap-2 min-w-[200px]"
+                  onClick={handleAddToCart}
+                  disabled={!product.inStock || isLoading}
+                >
+                  <ShoppingCart size={18} />
+                  Add to Cart
                 </PremiumButton>
-              </HoverLift>
 
-              <HoverLift>
-                <PremiumButton variant="outline" size="icon" className="h-11 w-11">
-                  <Share2 size={18} />
-                </PremiumButton>
-              </HoverLift>
+                <HoverLift>
+                  <PremiumButton variant="outline" size="icon" className="h-11 w-11">
+                    <Heart size={18} />
+                  </PremiumButton>
+                </HoverLift>
+
+                <HoverLift>
+                  <PremiumButton variant="outline" size="icon" className="h-11 w-11">
+                    <Share2 size={18} />
+                  </PremiumButton>
+                </HoverLift>
+              </div>
+
+              <PremiumCard variant="glass" className="p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <Truck size={20} className="text-primary" />
+                  <span className="text-sm">Free shipping on orders over $50</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Check size={20} className="text-primary" />
+                  <span className="text-sm">30-day easy returns</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Check size={20} className="text-primary" />
+                  <span className="text-sm">Secure checkout</span>
+                </div>
+              </PremiumCard>
             </div>
-
-            {/* Features */}
-            <PremiumCard variant="glass" className="p-6 space-y-4">
-              <div className="flex items-center gap-3">
-                <Truck size={20} className="text-primary" />
-                <span className="text-sm">Free shipping on orders over $50</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Check size={20} className="text-primary" />
-                <span className="text-sm">30-day easy returns</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Check size={20} className="text-primary" />
-                <span className="text-sm">Secure checkout</span>
-              </div>
-            </PremiumCard>
-          </div>
-        </Slide>
+          </Slide>
         </div>
 
-        {/* Related Products */}
         {relatedProducts.length > 0 && (
           <Reveal delay={0.3}>
             <section>
-              <h2 className="text-2xl font-bold text-foreground mb-6">
-                You might also like
-              </h2>
+              <h2 className="text-2xl font-bold text-foreground mb-6">You might also like</h2>
               <ProductGrid products={relatedProducts} />
             </section>
           </Reveal>

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCart } from '@/features/cart/useCart';
 import { useAuth } from '@/features/auth/useAuth';
-import { categories } from '@/data/categories';
+import { productService } from '@/features/products/productService';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/design-system/theme-provider';
 import {
@@ -24,6 +24,7 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [categories, setCategories] = useState<Array<{ name: string; count: number }>>([]);
   const router = useRouter();
 
   const { getCartItemCount, fetchCart } = useCart();
@@ -45,7 +46,20 @@ export function Navbar() {
     if (isAuthenticated) {
       fetchCart();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchCart]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await productService.getCategories();
+        setCategories(response.data || []);
+      } catch {
+        setCategories([]);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -119,9 +133,9 @@ export function Navbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="center" className="w-56 p-2 bg-background/95 backdrop-blur-xl border border-border/50">
                   {categories.map((category) => (
-                    <DropdownMenuItem key={category.id} asChild>
+                    <DropdownMenuItem key={category.name} asChild>
                       <Link
-                        href={`/categories/${category.slug}`}
+                        href={`/categories/${encodeURIComponent(category.name)}`}
                         className="cursor-pointer py-2.5 px-3 rounded-lg"
                       >
                         {category.name}
@@ -394,8 +408,8 @@ export function Navbar() {
             <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">Categories</p>
             {categories.map((category) => (
               <Link
-                key={category.id}
-                href={`/categories/${category.slug}`}
+                key={category.name}
+                href={`/categories/${encodeURIComponent(category.name)}`}
                 onClick={() => setIsMenuOpen(false)}
                 className="py-3 text-lg text-foreground/80 hover:text-foreground transition-colors"
               >

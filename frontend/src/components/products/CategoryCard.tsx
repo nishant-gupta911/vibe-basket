@@ -10,7 +10,7 @@ interface CategoryCardProps {
 export function CategoryCard({ category }: CategoryCardProps) {
   return (
     <Link
-      href={`/categories/${category.slug}`}
+      href={`/categories/${encodeURIComponent(category.name)}`}
       className="group relative overflow-hidden rounded-xl aspect-[4/3] block"
     >
       <img

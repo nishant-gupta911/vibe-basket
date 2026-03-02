@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCart } from '@/features/cart/useCart';
 import { useAuth } from '@/features/auth/useAuth';
-import { categories } from '@/data/categories';
+import { productService } from '@/features/products/productService';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,21 +16,40 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+interface NavCategory {
+  name: string;
+  count: number;
+}
+
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [categories, setCategories] = useState<NavCategory[]>([]);
   const router = useRouter();
-  
+
   const { getCartItemCount, fetchCart } = useCart();
   const { isAuthenticated, user, logout } = useAuth();
-  
+
   const itemCount = getCartItemCount();
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchCart();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchCart]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await productService.getCategories();
+        setCategories(response.data || []);
+      } catch {
+        setCategories([]);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +63,6 @@ export function Navbar() {
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md shadow-navbar">
       <div className="container mx-auto">
         <div className="flex items-center justify-between h-16 gap-4">
-          {/* Logo */}
           <Link href="/" className="flex items-center gap-2 shrink-0">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-lg">V</span>
@@ -52,7 +70,6 @@ export function Navbar() {
             <span className="text-xl font-bold text-foreground hidden sm:block">Vibe Basket</span>
           </Link>
 
-          {/* Search Bar - Desktop */}
           <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-xl">
             <div className="relative w-full">
               <Input
@@ -73,7 +90,6 @@ export function Navbar() {
             </div>
           </form>
 
-          {/* Navigation - Desktop */}
           <nav className="hidden md:flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -84,8 +100,8 @@ export function Navbar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48 bg-popover">
                 {categories.map((category) => (
-                  <DropdownMenuItem key={category.id} asChild>
-                    <Link href={`/categories/${category.slug}`} className="cursor-pointer">
+                  <DropdownMenuItem key={category.name} asChild>
+                    <Link href={`/categories/${encodeURIComponent(category.name)}`} className="cursor-pointer capitalize">
                       {category.name}
                     </Link>
                   </DropdownMenuItem>
@@ -142,7 +158,6 @@ export function Navbar() {
             )}
           </nav>
 
-          {/* Mobile Menu Button */}
           <div className="flex items-center gap-2 md:hidden">
             <Link href="/cart" className="relative">
               <Button variant="ghost" size="icon">
@@ -164,7 +179,6 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Search */}
         <div className="md:hidden pb-3">
           <form onSubmit={handleSearch}>
             <div className="relative">
@@ -187,7 +201,6 @@ export function Navbar() {
           </form>
         </div>
 
-        {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden border-t border-border py-4 animate-fade-in">
             <nav className="flex flex-col gap-2">
@@ -214,9 +227,9 @@ export function Navbar() {
               </Link>
               {categories.map((category) => (
                 <Link
-                  key={category.id}
-                  href={`/categories/${category.slug}`}
-                  className="px-4 py-2 hover:bg-secondary rounded-lg"
+                  key={category.name}
+                  href={`/categories/${encodeURIComponent(category.name)}`}
+                  className="px-4 py-2 hover:bg-secondary rounded-lg capitalize"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {category.name}

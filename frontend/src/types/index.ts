@@ -1,26 +1,24 @@
-// Unified Product interface that works for both API and local data
+// Unified Product interface that works for API responses across the app
 export interface Product {
   id: string;
   name: string;
   description: string;
   price: number;
-  originalPrice?: number;  // Optional: for sale items
+  originalPrice?: number;
   image: string;
   category: string;
-  categorySlug?: string;   // Optional: local data has this
-  stock?: number;          // Optional: API returns this
-  inStock?: boolean;       // Optional: local data has this
-  rating?: number;         // Optional: local data has this
-  reviewCount?: number;    // Optional: local data has this
-  badge?: 'sale' | 'new' | 'bestseller';  // Optional: local data has this
-  createdAt?: string;      // Optional: API returns this
-  updatedAt?: string;      // Optional: API returns this
+  stock?: number;
+  inStock?: boolean;
+  rating?: number;
+  reviewCount?: number;
+  badge?: 'sale' | 'new' | 'bestseller';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Category {
   id: string;
   name: string;
-  slug: string;
   image: string;
   productCount: number;
 }

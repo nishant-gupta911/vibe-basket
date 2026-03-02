@@ -50,13 +50,13 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/categories/fashion" className="text-background/70 hover:text-primary transition-colors">
-                  Fashion
+                <Link href="/categories/clothing" className="text-background/70 hover:text-primary transition-colors">
+                  Clothing
                 </Link>
               </li>
               <li>
-                <Link href="/categories/home-kitchen" className="text-background/70 hover:text-primary transition-colors">
-                  Home & Kitchen
+                <Link href="/categories/sports" className="text-background/70 hover:text-primary transition-colors">
+                  Sports
                 </Link>
               </li>
               <li>

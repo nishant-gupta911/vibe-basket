@@ -12,8 +12,8 @@ const footerLinks = {
   ],
   categories: [
     { label: 'Electronics', href: '/categories/electronics' },
-    { label: 'Fashion', href: '/categories/fashion' },
-    { label: 'Home & Kitchen', href: '/categories/home-kitchen' },
+    { label: 'Clothing', href: '/categories/clothing' },
+    { label: 'Sports', href: '/categories/sports' },
     { label: 'Beauty', href: '/categories/beauty' },
   ],
   company: [

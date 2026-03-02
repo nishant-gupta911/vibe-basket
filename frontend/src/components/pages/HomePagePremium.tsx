@@ -5,15 +5,14 @@ import { ArrowRight, ArrowUpRight, Sparkles, Play, ChevronRight } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { Layout } from '@/components/layout/Layout';
 import { ProductCardPremium } from '@/components/products/ProductCardPremium';
-import { products } from '@/data/products';
-import { categories } from '@/data/categories';
-import { useScrollReveal, useStaggerReveal, useParallax } from '@/hooks/useScrollReveal';
-import { useRef } from 'react';
+import { productService, Product } from '@/features/products/productService';
+import { useScrollReveal, useStaggerReveal } from '@/hooks/useScrollReveal';
+import { useEffect, useRef, useState } from 'react';
 
 export default function HomePage() {
-  const featuredProducts = products.filter((p) => p.badge === 'bestseller').slice(0, 4);
-  const trendingProducts = products.filter((p) => p.badge === 'new' || p.badge === 'sale').slice(0, 6);
-  const heroProduct = products[0];
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Array<{ name: string; count: number }>>([]);
 
   // Scroll refs for animations
   const [heroRef, heroVisible] = useScrollReveal<HTMLElement>({ threshold: 0.2 });
@@ -23,6 +22,28 @@ export default function HomePage() {
   const [productsRef, productsVisible] = useStaggerReveal<HTMLElement>();
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchHomeData = async () => {
+      try {
+        const [productsResponse, categoriesResponse] = await Promise.all([
+          productService.getProducts({ page: 1, limit: 12 }),
+          productService.getCategories(),
+        ]);
+
+        const fetchedProducts = productsResponse.data.products || [];
+        setFeaturedProducts(fetchedProducts.slice(0, 4));
+        setTrendingProducts(fetchedProducts.slice(0, 6));
+        setCategories(categoriesResponse.data || []);
+      } catch {
+        setFeaturedProducts([]);
+        setTrendingProducts([]);
+        setCategories([]);
+      }
+    };
+
+    fetchHomeData();
+  }, []);
 
   const scrollCollection = (direction: 'left' | 'right') => {
     if (!scrollContainerRef.current) return;
@@ -309,9 +330,9 @@ export default function HomePage() {
                 Our curated fashion collection brings together pieces that 
                 celebrate individuality while maintaining timeless appeal.
               </p>
-              <Link href="/categories/fashion">
+              <Link href="/categories/clothing">
                 <Button variant="outline" size="lg" className="rounded-full h-12 px-6 group">
-                  Explore Fashion
+                  Explore Clothing
                   <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
@@ -378,14 +399,14 @@ export default function HomePage() {
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {categories.slice(0, 6).map((category, index) => (
+            {categories.slice(0, 6).map((category) => (
               <Link
-                key={category.id}
-                href={`/categories/${category.slug}`}
+                key={category.name}
+                href={`/categories/${encodeURIComponent(category.name)}`}
                 className="group relative aspect-[4/3] rounded-2xl overflow-hidden"
               >
                 <img
-                  src={category.image}
+                  src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop"
                   alt={category.name}
                   className="w-full h-full object-cover transition-transform duration-700 ease-out-expo group-hover:scale-110"
                 />
@@ -393,7 +414,7 @@ export default function HomePage() {
                 <div className="absolute inset-0 flex items-end p-6">
                   <div className="transform transition-transform duration-500 group-hover:translate-y-[-4px]">
                     <h3 className="font-display text-2xl text-white mb-1">{category.name}</h3>
-                    <p className="text-white/60 text-sm">{category.productCount} Products</p>
+                    <p className="text-white/60 text-sm">{category.count} Products</p>
                   </div>
                 </div>
                 <div className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">

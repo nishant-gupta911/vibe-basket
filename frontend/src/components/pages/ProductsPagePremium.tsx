@@ -6,12 +6,8 @@ import { SlidersHorizontal, X, ChevronDown } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { ProductCardPremium } from '@/components/products/ProductCardPremium';
 import { PremiumButton } from '@/design-system/components/premium-button';
-import { PremiumCard } from '@/design-system/components/premium-card';
-import { PremiumSelect } from '@/design-system/components/premium-input';
-import { Reveal, StaggerContainer, Slide } from '@/design-system/components/motion';
-import { Skeleton, EmptyState } from '@/design-system/components/loading-states';
+import { EmptyState } from '@/design-system/components/loading-states';
 import { productService, Product } from '@/features/products/productService';
-import { categories } from '@/data/categories';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -39,6 +35,7 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Array<{ name: string; count: number }>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -51,6 +48,19 @@ export default function ProductsPage() {
   useEffect(() => {
     fetchProducts();
   }, [searchQuery, selectedCategory, priceRange, page, categoryParam]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await productService.getCategories();
+        setCategories(response.data || []);
+      } catch {
+        setCategories([]);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const fetchProducts = async () => {
     try {
@@ -66,9 +76,8 @@ export default function ProductsPage() {
 
       setProducts(response.data.products);
       setTotalPages(response.data.pagination?.totalPages || 1);
-    } catch (error: any) {
+    } catch {
       toast.error('Failed to fetch products');
-      console.error(error);
     } finally {
       setIsLoading(false);
     }
@@ -112,11 +121,11 @@ export default function ProductsPage() {
           </button>
           {categories.map((category) => (
             <button
-              key={category.id}
-              onClick={() => setSelectedCategory(category.slug)}
+              key={category.name}
+              onClick={() => setSelectedCategory(category.name)}
               className={cn(
                 'px-4 py-2 rounded-full text-sm transition-all duration-300',
-                selectedCategory === category.slug
+                selectedCategory === category.name
                   ? 'bg-foreground text-background'
                   : 'bg-secondary text-foreground hover:bg-secondary/80'
               )}
