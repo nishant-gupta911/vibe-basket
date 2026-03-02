@@ -4,21 +4,35 @@ A modern, production-ready e-commerce platform built with Next.js 15, NestJS, Po
 
 ## 🚀 Features
 
-### Core E-commerce
-- ✅ User authentication & authorization (JWT)
-- ✅ Product catalog with categories
-- ✅ Shopping cart management
-- ✅ Order processing and history
-- ✅ User profiles and order tracking
-- ✅ Responsive design with Tailwind CSS
+### Core Commerce
+- ✅ JWT authentication + profile management
+- ✅ Product catalog with search, filters, categories, and pagination
+- ✅ Cart management and order placement
+- ✅ Responsive UI with a shared design system
 
-### AI-Powered Features (Phase 4) 🤖
-- ✅ **Shopping Assistant Chatbot** - Natural language product search at `/chat`
-- ✅ **Mood-Based Recommender** - AI suggests products based on occasion, mood, and budget at `/mood`
-- ✅ **Semantic Search** - Vector similarity search using pgvector
-- ✅ **Smart Product Embeddings** - OpenAI text-embedding-3-small
-- ✅ **Product Card Integration** - AI recommendations display with add-to-cart functionality
-- ✅ **Real-time Chat UI** - Interactive messaging with product suggestions
+### Marketplace & Vendors
+- ✅ Vendor accounts with product ownership and isolation
+- ✅ Commission calculation and payout ledger
+- ✅ Vendor analytics and admin moderation
+
+### Payments & Finance
+- ✅ Razorpay payment intents, confirmations, webhooks
+- ✅ Order payment lifecycle (PENDING → PAID → FAILED → REFUNDED)
+- ✅ Refund flow with transaction logging
+- ✅ Coupons, discounts, and region-based tax calculation
+- ✅ Invoice generation and revenue reporting
+
+### Engagement & Intelligence
+- ✅ Wishlist with per-user persistence
+- ✅ Reviews and ratings with aggregates
+- ✅ Personalization, recommendations, and behavioral tracking
+- ✅ Mood-based product suggestions and shopping assistant
+- ✅ Notifications (order confirmations, wishlist alerts)
+
+### Reliability & Ops
+- ✅ Structured logging and metrics
+- ✅ Health checks and request logging
+- ✅ Integration test harness with Docker/local DB fallback
 
 ## 🏗️ Tech Stack
 
@@ -33,14 +47,13 @@ A modern, production-ready e-commerce platform built with Next.js 15, NestJS, Po
 - **NestJS** - Enterprise Node.js framework
 - **TypeScript** - Type-safe backend
 - **Prisma** - Modern ORM
-- **PostgreSQL 16** - Database with pgvector extension
-- **Redis** - Session & cache management
+- **PostgreSQL 16** - Relational database
+- **Redis** - Cache and session tracking
 - **JWT** - Authentication
 
-### AI/ML
-- **OpenAI GPT-4o-mini** - Chat completions
-- **OpenAI text-embedding-3-small** - Vector embeddings (1536d)
-- **pgvector** - Vector similarity search in PostgreSQL
+### Intelligence
+- **Rule-based assistant** - Deterministic conversational logic
+- **Optional OpenAI embeddings** - Vector embeddings when enabled
 
 ### DevOps
 - **Docker** - Containerized PostgreSQL + Redis
@@ -53,12 +66,18 @@ ecommerce-platform/
 ├── backend/              # NestJS backend
 │   ├── src/
 │   │   ├── modules/
-│   │   │   ├── auth/     # Authentication
-│   │   │   ├── user/     # User management
-│   │   │   ├── product/  # Product catalog
-│   │   │   ├── cart/     # Shopping cart
-│   │   │   ├── order/    # Order processing
-│   │   │   └── ai/       # AI features (NEW)
+│   │   │   ├── auth/        # Authentication
+│   │   │   ├── user/        # User management
+│   │   │   ├── product/     # Product catalog
+│   │   │   ├── cart/        # Shopping cart
+│   │   │   ├── order/       # Order processing
+│   │   │   ├── payments/    # Payment lifecycle
+│   │   │   ├── review/      # Reviews & ratings
+│   │   │   ├── wishlist/    # Wishlist
+│   │   │   ├── vendors/     # Vendor marketplace
+│   │   │   ├── reports/     # Revenue reporting
+│   │   │   ├── notifications/ # Notifications
+│   │   │   └── ai/          # Assistant + recommendations
 │   │   ├── config/       # Configuration
 │   │   └── common/       # Guards, decorators
 │   ├── prisma/
@@ -89,8 +108,10 @@ ecommerce-platform/
 ### Prerequisites
 - Node.js 18+
 - npm or yarn
-- Docker Desktop
-- OpenAI API key
+- PostgreSQL 16
+- Redis
+- Docker Desktop (optional, for local DB containers)
+- OpenAI API key (optional, for embeddings)
 
 ### 1. Clone Repository
 ```bash
@@ -105,9 +126,9 @@ npm install
 
 # Configure environment
 cp .env.example .env
-# Add your OpenAI API key to .env
+# Add optional AI credentials to .env if using embeddings
 
-# Start Docker containers
+# Start Docker containers (optional)
 cd ../devops/docker
 docker compose up -d
 
@@ -131,7 +152,7 @@ npm install
 npm run dev
 ```
 
-### 4. Generate Product Embeddings (for AI features)
+### 4. Generate Product Embeddings (optional)
 ```bash
 # Login to get JWT token, then:
 curl -X POST http://localhost:4000/api/ai/embed-products \
@@ -171,10 +192,27 @@ See [API.md](docs/API.md) for complete API reference.
 - `GET /api/orders` - Get user orders
 - `GET /api/orders/:id` - Get order details
 
+**Payments:**
+- `POST /api/payments/create-intent` - Create payment intent
+- `POST /api/payments/confirm` - Confirm payment
+- `POST /api/payments/webhook` - Payment webhook (provider)
+- `POST /api/payments/refund` - Admin refund
+
+**Wishlist & Reviews:**
+- `GET /api/wishlist` - Get wishlist
+- `POST /api/wishlist` - Add to wishlist
+- `DELETE /api/wishlist/:productId` - Remove from wishlist
+- `GET /api/products/:id/reviews` - Get reviews
+- `POST /api/products/:id/reviews` - Add review
+
+**Vendors & Admin:**
+- `GET /api/vendors/dashboard` - Vendor dashboard
+- `POST /api/vendors/approve` - Admin vendor approval
+- `GET /api/reports/revenue` - Admin revenue reporting
+
 **AI Features:**
 - `POST /api/ai/chat` - Chat with shopping assistant
 - `POST /api/ai/mood` - Get mood-based recommendations
-- `POST /api/ai/semantic-search` - Semantic product search
 - `POST /api/ai/embed-products` - Generate embeddings (auth required)
 
 ## 🤖 AI Features Guide
@@ -214,9 +252,13 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 JWT_SECRET=your-secret-key
 JWT_REFRESH_SECRET=your-refresh-secret
-OPENAI_API_KEY=sk-...
-AI_MODEL=gpt-4o-mini
-EMBEDDING_MODEL=text-embedding-3-small
+JWT_EXPIRATION=15m
+JWT_REFRESH_EXPIRATION=7d
+RAZORPAY_KEY_ID=rzp_test_...
+RAZORPAY_KEY_SECRET=...
+RAZORPAY_WEBHOOK_SECRET=...
+OPENAI_API_KEY=sk-... # optional
+EMBEDDING_MODEL=text-embedding-3-small # optional
 ```
 
 ### Frontend (.env.local)
@@ -227,10 +269,11 @@ NEXT_PUBLIC_AI_ENABLED=true
 
 ## 📦 Phase Completion
 
-- ✅ **Phase 1:** Next.js frontend conversion
-- ✅ **Phase 2:** NestJS backend with all modules
-- ✅ **Phase 3:** Frontend-backend API integration
-- ✅ **Phase 4:** AI chatbot + mood recommendation system
+- ✅ **Phase 1:** Stabilized core commerce
+- ✅ **Phase 2:** Market-ready features (search, wishlist, reviews, admin)
+- ✅ **Phase 3:** Intelligence + personalization
+- ✅ **Phase 4:** Payments, refunds, invoices, and finance
+- ✅ **Phase 5:** Multi-vendor marketplace architecture
 
 ## 🧪 Testing
 
@@ -344,4 +387,4 @@ For issues and questions, please open a GitHub issue.
 
 ---
 
-**Latest Update:** Phase 4 - AI Features Integration ✨
+**Latest Update:** Final polish pass
