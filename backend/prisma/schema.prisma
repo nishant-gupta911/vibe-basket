@@ -22,6 +22,8 @@ model User {
   notifications Notification[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([role])
 }
 
 model Product {
@@ -72,6 +74,10 @@ model Order {
   items     Json
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Wishlist {
@@ -114,6 +120,7 @@ model AnalyticsEvent {
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([event])
+  @@index([userId])
   @@index([sessionId])
   @@index([createdAt])
 }

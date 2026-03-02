@@ -24,11 +24,14 @@ export class OrderService {
     // Calculate total and get product details
     let total = 0;
     const orderItems = [];
+    const productIds = cart.items.map((item) => item.productId);
+    const products = await this.prisma.product.findMany({
+      where: { id: { in: productIds } },
+    });
+    const productMap = new Map(products.map((product) => [product.id, product]));
 
     for (const item of cart.items) {
-      const product = await this.prisma.product.findUnique({
-        where: { id: item.productId },
-      });
+      const product = productMap.get(item.productId);
 
       if (!product) {
         throw new NotFoundException(`Product ${item.productId} not found`);
