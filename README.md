@@ -188,6 +188,12 @@ User: "I need comfortable running shoes under $100"
 AI: "I found these great options for you..."
 ```
 
+## 🧪 Integration Tests
+
+- Docker mode: `npm run test:integration` will start Postgres via docker compose, create a dedicated test database, run migrations, seed minimal data, run tests, and stop the container.
+- Local mode: If Docker is not available and a local Postgres is already running on `localhost:5432`, tests run against `vibebasket_test` using `TEST_DATABASE_URL`/`DATABASE_URL`.
+- Fallback: If neither Docker nor local Postgres is available, integration tests are skipped with a clear message.
+
 ### Mood-Based Recommender
 Get personalized suggestions:
 ```json
