@@ -65,7 +65,10 @@ export class RecommendationService {
    * Generate mood-based recommendations
    * Main entry point for the shopping stylist
    */
-  async getMoodRecommendations(request: MoodRequest): Promise<MoodRecommendation> {
+  async getMoodRecommendations(
+    request: MoodRequest,
+    categoryWeights: Record<string, number> = {},
+  ): Promise<MoodRecommendation> {
     try {
       // Step 1: Find the mood profile (intent mapping)
       const profile = findMoodProfile(request.mood, request.occasion);
@@ -89,8 +92,8 @@ export class RecommendationService {
         return this.generateFallbackRecommendations(products, profile, request.budget);
       }
 
-      // Step 4: Score products using intent tags
-      const scoredProducts = this.scoreProductsByIntent(categoryFiltered, profile, request.budget);
+      // Step 4: Score products using intent tags + behavior boosts
+      const scoredProducts = this.scoreProductsByIntent(categoryFiltered, profile, request.budget, categoryWeights);
 
       // Step 5: Remove products with avoid tags
       const validProducts = this.filterByAvoidTags(scoredProducts, profile);
@@ -157,7 +160,8 @@ export class RecommendationService {
   private scoreProductsByIntent(
     products: Product[],
     profile: MoodProfile,
-    budget: number
+    budget: number,
+    categoryWeights: Record<string, number>,
   ): ScoredProduct[] {
     // Calculate target price based on budget strategy
     const targetPrice = budget * BUDGET_STRATEGIES[profile.budgetStrategy];
@@ -195,6 +199,10 @@ export class RecommendationService {
       );
       const categoryScore = categoryIndex === -1 ? 0 : 20 - categoryIndex * 3;
       score += Math.max(0, categoryScore);
+
+      // Factor 4: Behavior boost (up to 20 points)
+      const behaviorBoost = Math.min(20, (categoryWeights[product.category] || 0) * 2);
+      score += behaviorBoost;
 
       return {
         product,

@@ -87,4 +87,12 @@ export const productService = {
   getCategories: async () => {
     return api.get<CategoryResponseItem[]>('/products/categories');
   },
+
+  getPersonalizedProducts: async (limit: number = 12, category?: string) => {
+    const params = new URLSearchParams();
+    params.append('limit', limit.toString());
+    if (category) params.append('category', category);
+    const response = await api.get<{ products: Product[] }>(`/personalization/recommendations?${params.toString()}`);
+    return response;
+  },
 };

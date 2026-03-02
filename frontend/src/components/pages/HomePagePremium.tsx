@@ -26,12 +26,12 @@ export default function HomePage() {
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        const [productsResponse, categoriesResponse] = await Promise.all([
-          productService.getProducts({ page: 1, limit: 12 }),
+        const [personalizedResponse, categoriesResponse] = await Promise.all([
+          productService.getPersonalizedProducts(12),
           productService.getCategories(),
         ]);
 
-        const fetchedProducts = productsResponse.data.products || [];
+        const fetchedProducts = personalizedResponse.data.products || [];
         setFeaturedProducts(fetchedProducts.slice(0, 4));
         setTrendingProducts(fetchedProducts.slice(0, 6));
         setCategories(categoriesResponse.data || []);

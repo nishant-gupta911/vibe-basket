@@ -1,7 +1,8 @@
-import { Controller, Post, Body, HttpException, HttpStatus, BadRequestException, HttpCode } from '@nestjs/common';
+import { Controller, Post, Body, HttpException, HttpStatus, BadRequestException, HttpCode, Request } from '@nestjs/common';
 import { ChatbotService, ChatMessage } from './chatbot.service';
 import { RecommendationService, MoodRequest } from './recommendation.service';
 import { PrismaService } from '../../config/prisma.service';
+import { PersonalizationService } from '../personalization/personalization.service';
 import { embeddingService } from './embedding.service';
 
 @Controller('ai')
@@ -9,7 +10,7 @@ export class AIController {
   private chatbotService: ChatbotService;
   private recommendationService: RecommendationService;
 
-  constructor(private prisma: PrismaService) {
+  constructor(private prisma: PrismaService, private personalizationService: PersonalizationService) {
     this.chatbotService = new ChatbotService(prisma);
     this.recommendationService = new RecommendationService(prisma);
   }
@@ -45,7 +46,7 @@ export class AIController {
 
   @Post('mood')
   @HttpCode(200)
-  async getMoodRecommendations(@Body() body: MoodRequest) {
+  async getMoodRecommendations(@Request() req, @Body() body: MoodRequest) {
     if (!body?.occasion?.trim() || !body?.mood?.trim() || body?.budget === undefined) {
       throw new BadRequestException('Occasion, mood, and budget are required');
     }
@@ -55,7 +56,11 @@ export class AIController {
     }
 
     try {
-      const recommendations = await this.recommendationService.getMoodRecommendations(body);
+      const categoryWeights = await this.personalizationService.getCategoryWeights(
+        req.user?.userId || null,
+        req.sessionId || null,
+      );
+      const recommendations = await this.recommendationService.getMoodRecommendations(body, categoryWeights);
       return {
         success: true,
         data: recommendations,

@@ -20,6 +20,7 @@ import { AxiosError } from 'axios';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { trackEvent } from '@/lib/analytics';
+import { productService } from '@/features/products/productService';
 
 interface ProductDetailPageProps {
   id: string;
@@ -88,9 +89,7 @@ export default function ProductDetailPage({ id }: ProductDetailPageProps) {
 
         trackEvent('product_view', { productId: normalizedProduct.id });
 
-        const relatedResponse = await api.get<{ products: RawProduct[] }>(
-          `/products?category=${encodeURIComponent(normalizedProduct.category)}&limit=5`,
-        );
+        const relatedResponse = await productService.getPersonalizedProducts(5, normalizedProduct.category);
         const nextRelated = (relatedResponse.data?.products || [])
           .map(normalizeProduct)
           .filter((candidate: Product) => candidate.id !== normalizedProduct.id)
