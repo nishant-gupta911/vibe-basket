@@ -6,10 +6,10 @@ import { QueryProductDto, CreateProductDto, UpdateProductDto } from './dto/produ
 @Injectable()
 export class ProductService {
   constructor(private prisma: PrismaService, private cache: CacheService) {}
-  private categoriesCache: { data: Array<{ name: string; count: number }>; expiresAt: number } | null = null;
+  private categoriesCache = new Map<string, { data: Array<{ name: string; count: number }>; expiresAt: number }>();
 
-  async getProducts(query: QueryProductDto) {
-    const cacheKey = `products:${JSON.stringify(query)}`;
+  async getProducts(query: QueryProductDto, user?: { userId: string; role?: string } | null) {
+    const cacheKey = `products:${JSON.stringify(query)}:${user?.role || 'guest'}:${user?.userId || 'none'}`;
     const cached = this.cache.get<any>(cacheKey);
     if (cached) return cached;
 
@@ -52,6 +52,18 @@ export class ProductService {
 
     if (typeof inStock === 'boolean') {
       where.inStock = inStock;
+    }
+
+    if (user?.role === 'vendor') {
+      const vendor = await this.prisma.vendor.findUnique({
+        where: { userId: user.userId },
+        select: { id: true },
+      });
+      if (vendor) {
+        where.vendorId = vendor.id;
+      }
+    } else if (user?.role !== 'admin') {
+      where.vendor = { status: 'APPROVED' };
     }
 
     if (typeof minPrice === 'number' || typeof maxPrice === 'number') {
@@ -118,13 +130,31 @@ export class ProductService {
     return response;
   }
 
-  async getProduct(id: string) {
+  async getProduct(id: string, user?: { userId: string; role?: string } | null) {
     const product = await this.prisma.product.findUnique({
       where: { id },
     });
 
     if (!product) {
       throw new NotFoundException('Product not found');
+    }
+
+    if (user?.role === 'vendor') {
+      const vendor = await this.prisma.vendor.findUnique({
+        where: { userId: user.userId },
+        select: { id: true },
+      });
+      if (!vendor || product.vendorId !== vendor.id) {
+        throw new NotFoundException('Product not found');
+      }
+    } else if (user?.role !== 'admin') {
+      const vendor = await this.prisma.vendor.findUnique({
+        where: { id: product.vendorId },
+        select: { status: true },
+      });
+      if (!vendor || vendor.status !== 'APPROVED') {
+        throw new NotFoundException('Product not found');
+      }
     }
 
     return {
@@ -134,17 +164,33 @@ export class ProductService {
     };
   }
 
-  async getCategories() {
+  async getCategories(user?: { userId: string; role?: string } | null) {
     const now = Date.now();
-    if (this.categoriesCache && this.categoriesCache.expiresAt > now) {
+    const cacheKey = `${user?.role || 'guest'}:${user?.userId || 'none'}`;
+    const cached = this.categoriesCache.get(cacheKey);
+    if (cached && cached.expiresAt > now) {
       return {
         success: true,
-        data: this.categoriesCache.data,
+        data: cached.data,
         message: 'Categories retrieved',
       };
     }
 
+    const where: any = {};
+    if (user?.role === 'vendor') {
+      const vendor = await this.prisma.vendor.findUnique({
+        where: { userId: user.userId },
+        select: { id: true },
+      });
+      if (vendor) {
+        where.vendorId = vendor.id;
+      }
+    } else if (user?.role !== 'admin') {
+      where.vendor = { status: 'APPROVED' };
+    }
+
     const grouped = await this.prisma.product.groupBy({
+      where,
       by: ['category'],
       _count: { _all: true },
     });
@@ -154,7 +200,7 @@ export class ProductService {
       count: c._count._all,
     }));
 
-    this.categoriesCache = { data, expiresAt: now + 60_000 };
+    this.categoriesCache.set(cacheKey, { data, expiresAt: now + 60_000 });
 
     return {
       success: true,

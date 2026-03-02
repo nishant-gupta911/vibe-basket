@@ -1,31 +1,36 @@
-import { Controller, Get, Query, Param, Post, Body, Patch, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Param, Post, Body, Patch, Delete, UseGuards, Request } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { QueryProductDto, CreateProductDto, UpdateProductDto } from './dto/product.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AdminGuard } from '../../common/guards/admin.guard';
+import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
 
 @Controller('products')
 export class ProductController {
   constructor(private productService: ProductService) {}
 
   @Get()
-  getProducts(@Query() query: QueryProductDto) {
-    return this.productService.getProducts(query);
+  @UseGuards(OptionalJwtAuthGuard)
+  getProducts(@Request() req, @Query() query: QueryProductDto) {
+    return this.productService.getProducts(query, req.user || null);
   }
 
   @Get('search')
-  searchProducts(@Query() query: QueryProductDto) {
-    return this.productService.getProducts(query);
+  @UseGuards(OptionalJwtAuthGuard)
+  searchProducts(@Request() req, @Query() query: QueryProductDto) {
+    return this.productService.getProducts(query, req.user || null);
   }
 
   @Get('categories')
-  getCategories() {
-    return this.productService.getCategories();
+  @UseGuards(OptionalJwtAuthGuard)
+  getCategories(@Request() req) {
+    return this.productService.getCategories(req.user || null);
   }
 
   @Get(':id')
-  getProduct(@Param('id') id: string) {
-    return this.productService.getProduct(id);
+  @UseGuards(OptionalJwtAuthGuard)
+  getProduct(@Request() req, @Param('id') id: string) {
+    return this.productService.getProduct(id, req.user || null);
   }
 
   @Post()
