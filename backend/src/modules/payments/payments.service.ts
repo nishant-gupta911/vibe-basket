@@ -40,6 +40,36 @@ export class PaymentsService {
       };
     }
 
+    if (order.paymentLocked && order.paymentLockAt) {
+      const lockAge = Date.now() - order.paymentLockAt.getTime();
+      if (lockAge < 15 * 60_000) {
+        throw new BadRequestException('Payment already in progress');
+      }
+      await this.prisma.order.update({
+        where: { id: order.id },
+        data: { paymentLocked: false, paymentLockAt: null },
+      });
+    }
+
+    if (idempotencyKey) {
+      const existingByKey = await this.prisma.payment.findUnique({
+        where: { idempotencyKey },
+      });
+      if (existingByKey?.providerOrderId) {
+        return {
+          success: true,
+          data: {
+            orderId: order.id,
+            amount: existingByKey.amount,
+            currency: existingByKey.currency,
+            providerOrderId: existingByKey.providerOrderId,
+            keyId: process.env.RAZORPAY_KEY_ID,
+          },
+          message: 'Payment intent reused',
+        };
+      }
+    }
+
     const existingPayment = await this.prisma.payment.findFirst({
       where: {
         orderId: order.id,
@@ -60,6 +90,15 @@ export class PaymentsService {
         },
         message: 'Payment intent reused',
       };
+    }
+
+    const lockResult = await this.prisma.order.updateMany({
+      where: { id: order.id, paymentLocked: false },
+      data: { paymentLocked: true, paymentLockAt: new Date() },
+    });
+
+    if (lockResult.count === 0) {
+      throw new BadRequestException('Payment already in progress');
     }
 
     const { keyId, token } = this.getRazorpayAuth();
@@ -145,7 +184,13 @@ export class PaymentsService {
       await this.prisma.$transaction([
         this.prisma.order.update({
           where: { id: order.id },
-          data: { status: 'FAILED', paymentStatus: 'FAILED', failedAt: new Date() },
+          data: {
+            status: 'FAILED',
+            paymentStatus: 'FAILED',
+            failedAt: new Date(),
+            paymentLocked: false,
+            paymentLockAt: null,
+          },
         }),
         this.prisma.transactionLog.create({
           data: {
@@ -160,23 +205,25 @@ export class PaymentsService {
       throw new BadRequestException('Invalid payment signature');
     }
 
-    await this.prisma.$transaction([
-      this.prisma.payment.updateMany({
-        where: { orderId: order.id, providerOrderId: razorpayOrderId },
-        data: {
-          status: 'PAID',
-          providerPaymentId: razorpayPaymentId,
-          providerSignature: razorpaySignature,
-        },
-      }),
-      this.prisma.order.update({
-        where: { id: order.id },
+    const [orderUpdate] = await this.prisma.$transaction([
+      this.prisma.order.updateMany({
+        where: { id: order.id, status: { not: 'PAID' } },
         data: {
           status: 'PAID',
           paymentStatus: 'PAID',
           paymentProvider: 'RAZORPAY',
           paymentReference: razorpayPaymentId,
           paidAt: new Date(),
+          paymentLocked: false,
+          paymentLockAt: null,
+        },
+      }),
+      this.prisma.payment.updateMany({
+        where: { orderId: order.id, providerOrderId: razorpayOrderId },
+        data: {
+          status: 'PAID',
+          providerPaymentId: razorpayPaymentId,
+          providerSignature: razorpaySignature,
         },
       }),
       this.prisma.transactionLog.create({
@@ -190,6 +237,14 @@ export class PaymentsService {
         },
       }),
     ]);
+
+    if (orderUpdate.count === 0) {
+      return {
+        success: true,
+        data: { orderId: order.id, status: 'PAID' },
+        message: 'Payment already confirmed',
+      };
+    }
 
     await this.invoiceService.generateInvoice(order.id);
 
@@ -257,6 +312,8 @@ export class PaymentsService {
                 paymentStatus: status,
                 paymentProvider: 'RAZORPAY',
                 paymentReference: providerPaymentId || payment.providerPaymentId,
+                paymentLocked: false,
+                paymentLockAt: null,
                 ...(status === 'PAID' ? { paidAt: new Date() } : { failedAt: new Date() }),
               },
             }),
@@ -335,6 +392,8 @@ export class PaymentsService {
           status: isFullyRefunded ? 'REFUNDED' : order.status,
           paymentStatus: isFullyRefunded ? 'REFUNDED' : order.paymentStatus,
           refundedAt: isFullyRefunded ? new Date() : order.refundedAt,
+          paymentLocked: false,
+          paymentLockAt: null,
         },
       }),
       this.prisma.transactionLog.create({
