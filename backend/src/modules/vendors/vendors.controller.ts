@@ -50,4 +50,10 @@ export class VendorsController {
   performance(@Request() req) {
     return this.vendorsService.getProductPerformance(req.user.userId);
   }
+
+  @Get('analytics')
+  @UseGuards(JwtAuthGuard, VendorGuard)
+  analytics(@Request() req) {
+    return this.vendorsService.getVendorAnalytics(req.user.userId);
+  }
 }

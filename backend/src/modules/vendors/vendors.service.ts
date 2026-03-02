@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
 
 @Injectable()
@@ -172,6 +173,60 @@ export class VendorsService {
       success: true,
       data: Object.values(performance).sort((a, b) => b.revenue - a.revenue),
       message: 'Product performance',
+    };
+  }
+
+  async getVendorAnalytics(userId: string) {
+    const vendor = await this.prisma.vendor.findUnique({ where: { userId } });
+    if (!vendor) {
+      throw new NotFoundException('Vendor not found');
+    }
+
+    const topProducts = await this.getProductPerformance(userId);
+
+    const revenueOverTime = await this.prisma.$queryRaw<
+      Array<{ day: string; total: number }>
+    >`SELECT to_char(date_trunc('day', "createdAt"), 'YYYY-MM-DD') as day, SUM("vendorAmount") as total
+      FROM "OrderCommission"
+      WHERE "vendorId" = ${vendor.id}
+      GROUP BY 1
+      ORDER BY 1`;
+
+    const productIds = await this.prisma.product.findMany({
+      where: { vendorId: vendor.id },
+      select: { id: true },
+    });
+    const ids = productIds.map((p) => p.id);
+
+    let views = 0;
+    if (ids.length > 0) {
+      const viewRows = await this.prisma.$queryRaw<Array<{ count: number }>>`
+        SELECT COUNT(*)::int as count
+        FROM "AnalyticsEvent"
+        WHERE event = 'product_view'
+          AND (meta->>'productId') IN (${Prisma.join(ids)})
+      `;
+      views = viewRows[0]?.count || 0;
+    }
+
+    const orders = await this.prisma.orderCommission.count({
+      where: { vendorId: vendor.id },
+    });
+
+    const conversionRate = views > 0 ? Number(((orders / views) * 100).toFixed(2)) : 0;
+
+    return {
+      success: true,
+      data: {
+        totalSales: orders,
+        conversionRate,
+        topProducts: topProducts.data,
+        revenueOverTime: revenueOverTime.map((entry) => ({
+          day: entry.day,
+          total: Number(entry.total || 0),
+        })),
+      },
+      message: 'Vendor analytics',
     };
   }
 }
