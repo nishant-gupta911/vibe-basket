@@ -90,8 +90,13 @@ export class AIController {
 
       if (products.length === 0) {
         return {
+          success: true,
+          data: {
+            embedded: 0,
+            total: 0,
+            vectorColumnAvailable: false,
+          },
           message: 'No products found',
-          embedded: 0,
         };
       }
 
@@ -136,11 +141,15 @@ export class AIController {
       }
 
       return {
+        success: true,
+        data: {
+          embedded,
+          total: products.length,
+          vectorColumnAvailable,
+        },
         message: vectorColumnAvailable
           ? 'Products embedded successfully'
           : 'Products processed, but embedding column is not available in schema',
-        embedded,
-        total: products.length,
       };
     } catch (error) {
       console.error('Embedding error:', error);
