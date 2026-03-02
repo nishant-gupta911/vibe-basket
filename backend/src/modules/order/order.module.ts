@@ -5,9 +5,10 @@ import { PrismaService } from '../../config/prisma.service';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { CouponsModule } from '../coupons/coupons.module';
+import { TaxModule } from '../tax/tax.module';
 
 @Module({
-  imports: [AnalyticsModule, NotificationsModule, CouponsModule],
+  imports: [AnalyticsModule, NotificationsModule, CouponsModule, TaxModule],
   controllers: [OrderController],
   providers: [OrderService, PrismaService],
 })

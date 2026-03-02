@@ -19,6 +19,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { MetricsModule } from './common/metrics/metrics.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
+import { TaxModule } from './modules/tax/tax.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { CouponsModule } from './modules/coupons/coupons.module';
     NotificationsModule,
     PaymentsModule,
     CouponsModule,
+    TaxModule,
     CartModule,
     OrderModule,
     AIModule,

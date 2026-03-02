@@ -73,6 +73,9 @@ model Order {
   userId    String
   subtotal  Float    @default(0)
   discountAmount Float @default(0)
+  taxAmount Float @default(0)
+  taxRate   Float @default(0)
+  region    String?
   couponCode String?
   total     Float
   status    String   @default("PENDING")
@@ -91,6 +94,18 @@ model Order {
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+}
+
+model TaxRate {
+  id        String   @id @default(uuid())
+  region    String   @unique
+  rate      Float
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([region])
+  @@index([isActive])
 }
 
 model Coupon {

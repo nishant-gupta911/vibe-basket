@@ -3,6 +3,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CouponsService } from '../coupons/coupons.service';
+import { TaxService } from '../tax/tax.service';
 import { CreateOrderDto } from './dto/order.dto';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class OrderService {
     private analyticsService: AnalyticsService,
     private notificationsService: NotificationsService,
     private couponsService: CouponsService,
+    private taxService: TaxService,
   ) {}
 
   async createOrder(userId: string, dto: CreateOrderDto) {
@@ -65,7 +67,9 @@ export class OrderService {
       couponCode = validation.coupon.code;
     }
 
-    const total = Math.max(0, subtotal - discountAmount);
+    const taxableAmount = Math.max(0, subtotal - discountAmount);
+    const taxInfo = await this.taxService.calculateTax(dto?.region, taxableAmount);
+    const total = Math.max(0, taxableAmount + taxInfo.taxAmount);
 
     // Create order
     const order = await this.prisma.order.create({
@@ -73,6 +77,9 @@ export class OrderService {
         userId,
         subtotal,
         discountAmount,
+        taxAmount: taxInfo.taxAmount,
+        taxRate: taxInfo.taxRate,
+        region: taxInfo.region,
         couponCode,
         total,
         status: 'PENDING',

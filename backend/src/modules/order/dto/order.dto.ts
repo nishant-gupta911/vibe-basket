@@ -4,6 +4,10 @@ export class CreateOrderDto {
   @IsOptional()
   @IsString()
   couponCode?: string;
+
+  @IsOptional()
+  @IsString()
+  region?: string;
 }
 
 export class QueryOrderDto {
